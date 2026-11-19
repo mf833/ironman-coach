@@ -1,0 +1,163 @@
+week,day,sport,amount,kind,phase,title,detail
+1,Tue,swim,1500,test,Base,,"WU 300 easy; 1000 TEST: hard and even, time it; CD 200 easy"
+1,Tue,run,30,easy,Base,,"Easy, Z1-Z2, conversational"
+1,Wed,bike,60,easy,Base,,"Z2, with 5x1 min high cadence (100+ rpm) in the middle, 2 min easy between"
+1,Thu,swim,1600,intervals,Base,,WU 200 easy + 4x50 drills; main 2x500 on 30s rest; CD 200 easy
+1,Thu,run,40,easy,Base,,"Easy, Z1-Z2"
+1,Fri,strength,25,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+1,Sat,bike,90,long,Base,,"15 min Z1, then steady Z2. Practice fueling."
+1,Sun,run,45,long,Base,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+2,Tue,swim,1600,intervals,Base,,WU 200 easy + 8x50 drills; main 8x100 on 20s rest; CD 200 easy
+2,Tue,run,30,easy,Base,,"Easy, Z1-Z2, conversational"
+2,Wed,bike,60,easy,Base,,"Z2, with 5x1 min high cadence (100+ rpm) in the middle, 2 min easy between"
+2,Thu,swim,1800,intervals,Base,,WU 200 easy + 4x50 drills; main 3x400 on 30s rest; CD 200 easy
+2,Thu,run,40,easy,Base,,"Easy, Z1-Z2"
+2,Fri,strength,25,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+2,Sat,bike,105,long,Base,,"15 min Z1, then steady Z2. Practice fueling."
+2,Sun,run,50,long,Base,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+3,Tue,swim,1700,intervals,Base,,WU 200 easy + 8x50 drills; main 9x100 on 20s rest; CD 200 easy
+3,Tue,run,30,easy,Base,,"Easy, Z1-Z2, conversational"
+3,Wed,bike,60,easy,Base,,"Z2, with 5x1 min high cadence (100+ rpm) in the middle, 2 min easy between"
+3,Thu,swim,2000,straight,Base,,"WU 200 easy; 1600 straight at easy, steady effort; CD 200 easy"
+3,Thu,run,40,easy,Base,,"Easy, Z1-Z2"
+3,Fri,strength,25,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+3,Sat,bike,120,long,Base,,"15 min Z1, then steady Z2. Practice fueling."
+3,Sun,run,55,long,Base,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+4,Tue,swim,1300,intervals,Base,,WU 200 easy + 8x50 drills; main 5x100 on 20s rest; CD 200 easy
+4,Tue,run,30,easy,Base,,"Easy, Z1-Z2, conversational"
+4,Wed,bike,60,easy,Base,,"Z2, with 5x1 min high cadence (100+ rpm) in the middle, 2 min easy between"
+4,Thu,swim,1400,intervals,Base,,WU 200 easy + 4x50 drills; main 2x400 on 30s rest; CD 200 easy
+4,Thu,run,35,easy,Base,,"Easy, Z1-Z2"
+4,Fri,strength,20,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+4,Sat,bike,85,long,Base,,"15 min Z1, then steady Z2. Practice fueling."
+4,Sun,run,40,long,Base,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+5,Tue,swim,1800,intervals,Base,,WU 200 easy + 8x50 drills; main 10x100 on 20s rest; CD 200 easy
+5,Tue,run,35,easy,Base,,"Easy, Z1-Z2, conversational"
+5,Wed,bike,60,intervals,Base,,"At 15 min: 3x6 min Z3, 3 min easy between"
+5,Thu,swim,2200,intervals,Base,,WU 200 easy + 4x50 drills; main 4x400 on 30s rest; CD 200 easy
+5,Thu,run,40,easy,Base,,"Easy, Z1-Z2"
+5,Fri,strength,25,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+5,Sat,bike,135,long,Base,,"15 min Z1, then steady Z2. Practice fueling."
+5,Sun,run,60,long,Base,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+6,Tue,swim,1900,intervals,Base,,WU 200 easy + 8x50 drills; main 11x100 on 20s rest; CD 200 easy
+6,Tue,run,35,easy,Base,,"Easy, Z1-Z2, conversational"
+6,Wed,bike,60,intervals,Base,,"At 15 min: 3x6 min Z3, 3 min easy between"
+6,Thu,swim,2400,intervals,Base,,WU 200 easy + 4x50 drills; main 6x300 on 30s rest; CD 200 easy
+6,Thu,run,40,easy,Base,,"Easy, Z1-Z2"
+6,Fri,strength,25,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+6,Sat,bike,150,long,Base,,"15 min Z1, then steady Z2. Practice fueling."
+6,Sun,run,65,long,Base,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+7,Tue,swim,2000,intervals,Base,,WU 200 easy + 8x50 drills; main 12x100 on 20s rest; CD 200 easy
+7,Tue,run,35,easy,Base,,"Easy, Z1-Z2, conversational"
+7,Wed,bike,60,intervals,Base,,"At 15 min: 3x6 min Z3, 3 min easy between"
+7,Thu,swim,2600,straight,Base,,"WU 200 easy; 2200 straight at easy, steady effort; CD 200 easy"
+7,Thu,run,40,easy,Base,,"Easy, Z1-Z2"
+7,Fri,strength,25,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+7,Sat,bike,165,long,Base,,"15 min Z1, then steady Z2. Practice fueling."
+7,Sun,run,75,long,Base,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+8,Tue,swim,1500,intervals,Base,,WU 200 easy + 8x50 drills; main 7x100 on 20s rest; CD 200 easy
+8,Tue,run,30,easy,Base,,"Easy, Z1-Z2, conversational"
+8,Wed,bike,60,easy,Base,,"Z2, with 5x1 min high cadence (100+ rpm) in the middle, 2 min easy between"
+8,Thu,swim,1800,intervals,Base,,WU 200 easy + 4x50 drills; main 3x400 on 30s rest; CD 200 easy
+8,Thu,run,35,easy,Base,,"Easy, Z1-Z2"
+8,Fri,strength,20,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+8,Sat,bike,110,long,Base,,"15 min Z1, then steady Z2. Practice fueling."
+8,Sun,run,50,long,Base,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+9,Tue,swim,1500,test,Build,,"WU 300 easy; 1000 TEST: hard and even, time it; CD 200 easy"
+9,Tue,run,40,easy,Build,,"Easy, Z1-Z2, conversational"
+9,Wed,bike,55,test,Build,,WU 20 min easy with 3x1 min hard; 20 min FTP TEST; 10 min easy
+9,Thu,swim,2800,intervals,Build,,WU 200 easy + 4x50 drills; main 22x100 on 20s rest; CD 200 easy
+9,Thu,run,50,intervals,Build,,"At 15 min: 3x6 min Z3, 3 min easy between"
+9,Fri,strength,25,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+9,Sat,bike,180,long,Build,,"15 min Z1, then steady Z2. Practice fueling."
+9,Sat,run,15,brick,Build,,"Straight off the bike, easy Z2"
+9,Sun,run,80,long,Build,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+10,Tue,swim,2400,intervals,Build,,WU 200 easy + 8x50 drills; main 16x100 on 20s rest; CD 200 easy
+10,Tue,run,40,easy,Build,,"Easy, Z1-Z2, conversational"
+10,Wed,bike,75,intervals,Build,,"At 15 min: 3x10 min Z3, 5 min easy between"
+10,Thu,swim,3000,intervals,Build,,WU 200 easy + 4x50 drills; main 6x400 on 30s rest; CD 200 easy
+10,Thu,run,50,intervals,Build,,"At 15 min: 3x6 min Z3, 3 min easy between"
+10,Fri,strength,25,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+10,Sat,bike,210,long,Build,,"15 min Z1, then steady Z2. Practice fueling."
+10,Sat,run,15,brick,Build,,"Straight off the bike, easy Z2"
+10,Sun,run,90,long,Build,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+11,Tue,swim,2500,intervals,Build,,WU 200 easy + 8x50 drills; main 17x100 on 20s rest; CD 200 easy
+11,Tue,run,40,easy,Build,,"Easy, Z1-Z2, conversational"
+11,Wed,bike,75,intervals,Build,,"At 15 min: 3x10 min Z3, 5 min easy between"
+11,Thu,swim,3200,straight,Build,,"WU 200 easy; 2800 straight at easy, steady effort; CD 200 easy"
+11,Thu,run,50,intervals,Build,,"At 15 min: 3x6 min Z3, 3 min easy between"
+11,Fri,strength,25,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+11,Sat,bike,240,long,Build,,"15 min Z1, then steady Z2. Practice fueling."
+11,Sat,run,15,brick,Build,,"Straight off the bike, easy Z2"
+11,Sun,run,100,long,Build,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+12,Tue,swim,1800,intervals,Build,,WU 200 easy + 8x50 drills; main 10x100 on 20s rest; CD 200 easy
+12,Tue,run,30,easy,Build,,"Easy, Z1-Z2, conversational"
+12,Wed,bike,60,easy,Build,,"Z2, with 5x1 min high cadence (100+ rpm) in the middle, 2 min easy between"
+12,Thu,swim,2400,intervals,Build,,WU 200 easy + 4x50 drills; main 6x300 on 30s rest; CD 200 easy
+12,Thu,run,35,easy,Build,,"Easy, Z1-Z2"
+12,Fri,strength,20,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+12,Sat,bike,165,long,Build,,"15 min Z1, then steady Z2. Practice fueling."
+12,Sun,run,70,long,Build,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+13,Tue,swim,2600,intervals,Build,,WU 200 easy + 8x50 drills; main 18x100 on 20s rest; CD 200 easy
+13,Tue,run,45,easy,Build,,"Easy, Z1-Z2, conversational"
+13,Wed,bike,75,intervals,Build,,"At 15 min: 3x10 min Z3, 5 min easy between"
+13,Thu,swim,3400,intervals,Build,,WU 200 easy + 4x50 drills; main 7x400 on 30s rest; CD 200 easy
+13,Thu,run,50,intervals,Build,,"At 15 min: 3x6 min Z3, 3 min easy between"
+13,Fri,strength,25,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+13,Sat,bike,270,long,Build,,"15 min Z1, then steady Z2. Practice fueling."
+13,Sat,run,15,brick,Build,,"Straight off the bike, easy Z2"
+13,Sun,run,110,long,Build,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+14,Tue,swim,2800,intervals,Build,,WU 200 easy + 8x50 drills; main 20x100 on 20s rest; CD 200 easy
+14,Tue,run,45,easy,Build,,"Easy, Z1-Z2, conversational"
+14,Wed,bike,75,intervals,Build,,"At 15 min: 4x10 min Z3, 5 min easy between"
+14,Thu,swim,3600,intervals,Build,,WU 200 easy + 4x50 drills; main 6x500 on 30s rest; CD 200 easy
+14,Thu,run,50,intervals,Build,,"At 15 min: 3x6 min Z3, 3 min easy between"
+14,Fri,strength,25,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+14,Sat,bike,300,long,Build,,"15 min Z1, then steady Z2. Practice fueling."
+14,Sat,run,20,brick,Build,,"Straight off the bike, easy Z2"
+14,Sun,run,120,long,Build,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+15,Tue,swim,3000,intervals,Build,,WU 200 easy + 8x50 drills; main 22x100 on 20s rest; CD 200 easy
+15,Tue,run,45,easy,Build,,"Easy, Z1-Z2, conversational"
+15,Wed,bike,75,intervals,Build,,"At 15 min: 4x10 min Z3, 5 min easy between"
+15,Thu,swim,3800,straight,Build,,"WU 200 easy; 3400 straight at easy, steady effort; CD 200 easy"
+15,Thu,run,50,intervals,Build,,"At 15 min: 3x6 min Z3, 3 min easy between"
+15,Fri,strength,25,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+15,Sat,bike,330,long,Build,,"15 min Z1, then steady Z2. Practice fueling."
+15,Sat,run,20,brick,Build,,"Straight off the bike, easy Z2"
+15,Sun,run,135,long,Build,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+16,Tue,swim,2200,intervals,Peak,,WU 200 easy + 8x50 drills; main 14x100 on 20s rest; CD 200 easy
+16,Tue,run,30,easy,Peak,,"Easy, Z1-Z2, conversational"
+16,Wed,bike,60,easy,Peak,,"Z2, with 5x1 min high cadence (100+ rpm) in the middle, 2 min easy between"
+16,Thu,swim,2600,intervals,Peak,,WU 200 easy + 4x50 drills; main 4x500 on 30s rest; CD 200 easy
+16,Thu,run,35,easy,Peak,,"Easy, Z1-Z2"
+16,Fri,strength,20,easy,Peak,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+16,Sat,bike,240,long,Peak,,"15 min Z1, then steady Z2. Practice fueling."
+16,Sun,run,90,long,Peak,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+17,Tue,swim,3000,intervals,Peak,,WU 200 easy + 8x50 drills; main 22x100 on 20s rest; CD 200 easy
+17,Tue,run,45,easy,Peak,,"Easy, Z1-Z2, conversational"
+17,Wed,bike,75,intervals,Peak,,"At 15 min: 4x10 min Z3, 5 min easy between"
+17,Thu,swim,4200,straight,Peak,,"WU 200 easy; 3800 straight at easy, steady effort; CD 200 easy"
+17,Thu,run,50,intervals,Peak,,"At 15 min: 3x6 min Z3, 3 min easy between"
+17,Fri,strength,25,easy,Peak,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+17,Sat,bike,360,long,Peak,,"15 min Z1, then steady Z2. Practice fueling."
+17,Sat,run,20,brick,Peak,,"Straight off the bike, easy Z2"
+17,Sun,run,150,long,Peak,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+18,Tue,swim,2400,intervals,Taper,,WU 200 easy + 8x50 drills; main 16x100 on 20s rest; CD 200 easy
+18,Tue,run,30,easy,Taper,,"Easy, Z1-Z2, conversational"
+18,Wed,bike,60,intervals,Taper,,"At 15 min: 3x5 min Z3, 3 min easy between"
+18,Thu,swim,3000,intervals,Taper,,WU 200 easy + 4x50 drills; main 6x400 on 30s rest; CD 200 easy
+18,Thu,run,40,easy,Taper,,"Easy, Z1-Z2"
+18,Sat,bike,240,long,Taper,,"15 min Z1, then steady Z2. Practice fueling."
+18,Sun,run,100,long,Taper,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+19,Tue,swim,1800,intervals,Taper,,WU 200 easy + 8x50 drills; main 10x100 on 20s rest; CD 200 easy
+19,Tue,run,30,easy,Taper,,"Easy, Z1-Z2, conversational"
+19,Wed,bike,60,intervals,Taper,,"At 15 min: 3x5 min Z3, 3 min easy between"
+19,Thu,swim,2000,intervals,Taper,,WU 200 easy + 4x50 drills; main 7x200 on 30s rest; CD 200 easy
+19,Thu,run,40,easy,Taper,,"Easy, Z1-Z2"
+19,Sat,bike,150,long,Taper,,"15 min Z1, then steady Z2. Practice fueling."
+19,Sun,run,70,long,Taper,,Easy Z2. Run/walk is fine (e.g. 9 min run / 1 min walk).
+20,Tue,swim,1200,easy,Race,,WU 200 easy + 4x50 drills; main 6x100 on 20s rest; CD 200 easy
+20,Wed,bike,45,intervals,Race,,"At 15 min: 3x2 min Z3, 3 min easy between"
+20,Thu,run,20,easy,Race,,"Easy, a few relaxed strides at the end"
+20,Fri,swim,600,easy,Race,Shakeout swim,600 easy; open water on the course if allowed
+20,Sat,race,0,race,Race,,"Race day. Start easy, fuel early, trust the training."

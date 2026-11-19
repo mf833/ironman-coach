@@ -1,0 +1,248 @@
+import copy
+from datetime import date, timedelta
+from pathlib import Path
+
+from ironman_coach import engine, plan as P
+from ironman_coach.state import DEFAULT_CONFIG, DEFAULT_STATE
+
+CFG = copy.deepcopy(DEFAULT_CONFIG)
+PLANS = Path(__file__).resolve().parent.parent / "plans"
+RACE = date(2027, 4, 24)  # a Saturday; 20-week plan starts Mon Dec 7, 2026
+
+
+def full_plan():
+    return P.load_plan(PLANS / "full-distance-triathlon-20wk.csv", RACE, "Test Race")
+
+
+def state(**kw):
+    s = copy.deepcopy(DEFAULT_STATE)
+    s.update(kw)
+    return s
+
+
+_ids = iter(range(1, 10**6))
+
+
+def act(day, sport, minutes=0, meters=0):
+    return {"id": next(_ids), "name": sport, "type": sport, "sport": sport, "date": day.isoformat(),
+            "minutes": minutes, "meters": meters, "avg_hr": None}
+
+
+def run_engine(today, activities=(), day=None, st=None):
+    st = st or state()
+    plan = P.apply_overrides(full_plan(), st["overrides"])
+    statuses, _ = engine.match(plan, list(activities), today, CFG)
+    signals = engine.recovery_signals(day, st["notes"].get(today.isoformat()), CFG)
+    return plan, statuses, engine.advise(plan, statuses, signals, today, st, CFG, list(activities))
+
+
+def day(hrv=40, sleep=7.5, rhr=60, rhr7=60, status="BALANCED"):
+    return {"hrv": {"last_night": hrv, "balanced_low": 35, "balanced_upper": 47, "low_upper": 32, "status": status},
+            "sleep_h": sleep, "rhr": rhr, "rhr_7d": rhr7}
+
+
+# ---- plan files -----------------------------------------------------------------
+def test_full_plan_layout():
+    plan = full_plan()
+    assert P.plan_start() == date(2026, 12, 7) and P.num_weeks() == 20
+    race = [s for s in plan if s.sport == "race"]
+    assert len(race) == 1 and race[0].day == RACE
+    assert max(s.amount for s in plan if s.sport == "bike") == 360
+    assert len({s.id for s in plan}) == len(plan)
+    assert not [s for s in plan if s.day == P.plan_start()]  # Monday rest
+
+
+def test_every_example_plan_loads_and_swims_add_up():
+    from ironman_coach.swimsets import breakdown
+    from ironman_coach.workouts import structure
+    for f in PLANS.glob("*.csv"):
+        plan = P.load_plan(f, RACE, "x")
+        assert plan
+        for s in plan:
+            if s.sport == "swim":
+                assert breakdown(s.detail, s.amount)[1] == s.amount, (f.name, s.detail)
+            if s.sport in ("bike", "run") and s.kind in ("intervals", "test"):
+                assert structure(s.detail, s.amount), (f.name, s.detail)
+
+
+def test_run_only_plan_has_no_swim_or_bike():
+    plan = P.load_plan(PLANS / "marathon-16wk.csv", date(2027, 5, 2), "Marathon")
+    assert {s.sport for s in plan} <= {"run", "strength", "race"}
+    wp = engine.week_progress(plan, {}, [], 1)
+    assert set(wp) == {"run"}
+
+
+def test_bad_plan_row_is_reported(tmp_path):
+    f = tmp_path / "p.csv"
+    f.write_text("week,day,sport,amount,detail\n1,Tue,rowing,30,x\n")
+    try:
+        P.load_plan(f, RACE)
+    except P.PlanError as e:
+        assert "line 2" in str(e)
+    else:
+        raise AssertionError("expected PlanError")
+
+
+# ---- matching ----------------------------------------------------------------
+def test_done_partial_missed_and_moved():
+    acts = [act(date(2026, 12, 9), "bike", 58), act(date(2026, 12, 8), "swim", meters=600),
+            act(date(2026, 12, 13), "bike", 85)]
+    _, st, _ = run_engine(date(2026, 12, 15), acts)
+    by = {(s.session.day, s.session.sport): s.state for s in st.values()}
+    assert by[(date(2026, 12, 9), "bike")] == "done"
+    assert by[(date(2026, 12, 8), "swim")] == "partial"
+    assert by[(date(2026, 12, 12), "bike")] == "moved"   # long ride done Sunday instead
+    assert by[(date(2026, 12, 13), "run")] == "missed"
+
+
+# ---- recovery ----------------------------------------------------------------
+def test_all_normal_no_recovery_advice():
+    _, _, adv = run_engine(date(2026, 12, 8), day=day())
+    assert not [a for a in adv if a.rule == "recovery"]
+
+
+def test_one_signal_off_means_no_change():
+    _, _, adv = run_engine(date(2026, 12, 8), day=day(sleep=5.8))
+    rec = [a for a in adv if a.rule == "recovery"]
+    assert rec and rec[0].severity == "info" and not rec[0].changes
+
+
+def test_two_signals_turn_test_easy():
+    wed = date(2027, 2, 3)  # week 9 FTP test
+    _, _, adv = run_engine(wed, day=day(hrv=34, sleep=5.5, status="UNBALANCED"))
+    rec = [a for a in adv if a.rule == "recovery"][0]
+    assert rec.severity == "suggest" and list(rec.changes.values())[0]["kind"] == "easy"
+
+
+def test_two_signals_shorten_long_session_25pct():
+    sat = date(2027, 1, 9)  # week 5 long ride 135
+    _, _, adv = run_engine(sat, day=day(sleep=4.5))
+    rec = [a for a in adv if a.rule == "recovery"][0]
+    assert list(rec.changes.values())[0]["amount"] == 100
+
+
+def test_many_signals_means_rest_or_very_easy():
+    _, _, adv = run_engine(date(2027, 1, 9), day=day(hrv=28, sleep=4.5, rhr=70, rhr7=60, status="LOW"))
+    rec = [a for a in adv if a.rule == "recovery"][0]
+    assert rec.severity == "important" and list(rec.changes.values())[0]["amount"] == 30
+
+
+def test_sick_drops_today():
+    tue = date(2026, 12, 8)
+    _, _, adv = run_engine(tue, st=state(notes={tue.isoformat(): "sick"}))
+    sick = [a for a in adv if a.rule == "sick"][0]
+    assert sick.changes and all(c == {"dropped": True} for c in sick.changes.values())
+    assert not [a for a in adv if a.rule == "recovery"]
+
+
+def test_pain_swaps_runs_for_rides():
+    tue = date(2026, 12, 15)
+    _, _, adv = run_engine(tue, st=state(notes={tue.isoformat(): "pain"}))
+    pain = [a for a in adv if a.rule == "pain"][0]
+    assert pain.changes and all(c["sport"] == "bike" for c in pain.changes.values())
+
+
+# ---- missed ------------------------------------------------------------------
+def test_missed_easy_session_is_let_go():
+    _, _, adv = run_engine(date(2026, 12, 10))
+    m = [a for a in adv if a.rule == "missed"]
+    assert m and m[0].severity == "info" and not m[0].changes
+
+
+def test_missed_key_session_moves_only_to_free_slot():
+    # Week 3 Thu straight swim (Dec 24) missed; Fri is next to Sat's long ride, so no slot.
+    _, _, adv = run_engine(date(2026, 12, 25))
+    key = [a for a in adv if a.id.startswith("missed:2026-12-24-swim")]
+    assert key and not key[0].changes
+
+
+# ---- gate --------------------------------------------------------------------
+def test_gate_caps_big_jump():
+    sat = date(2027, 2, 6)  # week 9 long ride 180
+    adv = engine.rule_long_session_gate(full_plan(), [act(sat - timedelta(days=7), "bike", 120)],
+                                        sat - timedelta(days=2), CFG)
+    gate = [a for a in adv if "bike" in a.id]
+    assert gate and list(gate[0].changes.values())[0]["amount"] == 150
+
+
+def test_gate_quiet_when_history_supports_it():
+    sat = date(2027, 2, 6)
+    adv = engine.rule_long_session_gate(full_plan(), [act(sat - timedelta(days=7), "bike", 150)],
+                                        sat - timedelta(days=2), CFG)
+    assert not [a for a in adv if "bike" in a.id]
+
+
+# ---- week compliance ---------------------------------------------------------
+def test_bad_week_holds_long_sessions():
+    # Monday of week 7 after doing nothing in week 6 (long ride 150, long run 65).
+    _, _, adv = run_engine(date(2027, 1, 18))
+    w = [a for a in adv if a.rule == "week"][0]
+    assert w.severity == "suggest"
+    # held at last week's length, and never above the gate (default baseline 60 min ride / 30 min run)
+    assert sorted(c["amount"] for c in w.changes.values()) == [40, 75]
+    assert not [a for a in adv if a.rule == "gate" and a.changes.keys() & w.changes.keys()]
+
+
+# ---- busy --------------------------------------------------------------------
+def test_busy_shortens():
+    sun = date(2027, 1, 10)  # week 5 long run 60
+    _, _, adv = run_engine(sun - timedelta(days=1), st=state(busy={sun.isoformat(): 40}))
+    b = [a for a in adv if a.rule == "busy"][0]
+    assert list(b.changes.values())[0]["amount"] == 40
+
+
+def test_overrides_apply_and_drop():
+    plan = full_plan()
+    s = next(x for x in plan if x.sport == "bike")
+    other = next(x for x in plan if x.sport == "swim")
+    out = P.apply_overrides(plan, {s.id: {"amount": 10, "note": "x"}, other.id: {"dropped": True}})
+    assert next(x for x in out if x.id == s.id).amount == 10
+    assert other.id not in {x.id for x in out}
+
+
+# ---- garmin, zones, drills, workouts ----------------------------------------------
+def test_normalize_raw_garmin_shapes():
+    from ironman_coach.garmin import normalize_activity, normalize_day
+    a = normalize_activity({"activityId": 5, "activityName": "Zwift", "startTimeLocal": "2026-12-08 07:00:00",
+                            "activityType": {"typeKey": "virtual_ride"}, "duration": 3600, "distance": 30000})
+    assert a["sport"] == "bike" and a["minutes"] == 60 and a["date"] == "2026-12-08"
+    assert normalize_activity({"activityType": {"typeKey": "walking"}}) is None
+    d = normalize_day("2026-12-09",
+                      {"hrvSummary": {"lastNightAvg": 34, "weeklyAvg": 33, "status": "UNBALANCED",
+                                      "baseline": {"balancedLow": 35, "balancedUpper": 47, "lowUpper": 32}}},
+                      {"restingHeartRate": 68, "lastSevenDaysAvgRestingHeartRate": 70},
+                      {"dailySleepDTO": {"sleepTimeSeconds": 22800}})
+    assert d["hrv"]["balanced_low"] == 35 and d["rhr"] == 68 and d["sleep_h"] == 6.33
+
+
+def test_zones_parse_and_numbers():
+    from ironman_coach.zones import zones_in, zone_rows, normalize_hr_zones, normalize_ftp
+    assert zones_in("Z1 building to Z2") == [1, 2]
+    assert zones_in("2x10 min Z3-Z4") == [3, 4]
+    hr = normalize_hr_zones([{"sport": "CYCLING", "zone1Floor": 106, "zone2Floor": 127, "zone3Floor": 148,
+                              "zone4Floor": 169, "zone5Floor": 190, "maxHeartRateUsed": 211}])
+    (row,) = zone_rows("bike", [2], 200, hr, None)
+    assert row[1] == "112-150 W" and row[2] == "127-147 bpm"
+    assert normalize_ftp({"functionalThresholdPower": 149}) == 149
+
+
+def test_drills_two_per_session():
+    from ironman_coach.drills import drill_sets, DRILLS
+    full_plan()
+    sets = drill_sets("WU 200 easy + 8x50 drills; main 7x100 on 20s rest; CD 200 easy", 1)
+    assert len(sets) == 1 and len(sets[0]["drills"]) == 2 and sets[0]["per"] == 4
+    assert all(n in DRILLS for n in sets[0]["drills"])
+
+
+def test_workout_builders():
+    from ironman_coach.workouts import structure, swim_workout, zwo, run_workout
+    from ironman_coach.drills import drill_sets
+    for s in full_plan():
+        if s.sport == "swim":
+            w = swim_workout(s, [d["drills"] for d in drill_sets(s.detail, s.week)])
+            assert w["workoutSegments"][0]["workoutSteps"]
+        if s.sport == "bike":
+            assert "<workout_file>" in zwo(s)
+        if s.sport == "run" and s.kind in ("intervals", "test"):
+            run_workout(s, structure(s.detail, s.amount))
+    assert structure("Easy, Z1-Z2, conversational", 45) is None

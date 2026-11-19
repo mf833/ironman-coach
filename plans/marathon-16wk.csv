@@ -1,0 +1,92 @@
+week,day,sport,amount,kind,phase,title,detail
+1,Tue,run,40,easy,Base,,"Easy, Z1-Z2"
+1,Wed,run,55,test,Base,,WU 10 min easy; 30 min LTHR TEST; 10 min easy
+1,Thu,run,40,easy,Base,,"Easy, Z1-Z2"
+1,Fri,strength,25,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+1,Sat,run,45,easy,Base,,"Easy, Z1-Z2"
+1,Sun,run,60,long,Base,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+2,Tue,run,40,easy,Base,,"Easy, Z1-Z2"
+2,Wed,run,50,intervals,Base,,At 15 min: 15 min Z3
+2,Thu,run,40,easy,Base,,"Easy, Z1-Z2"
+2,Fri,strength,25,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+2,Sat,run,45,easy,Base,,"Easy, Z1-Z2"
+2,Sun,run,70,long,Base,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+3,Tue,run,40,easy,Base,,"Easy, Z1-Z2"
+3,Wed,run,50,intervals,Base,,At 15 min: 15 min Z3
+3,Thu,run,40,easy,Base,,"Easy, Z1-Z2"
+3,Fri,strength,25,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+3,Sat,run,45,easy,Base,,"Easy, Z1-Z2"
+3,Sun,run,80,long,Base,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+4,Tue,run,30,easy,Base,,"Easy, Z1-Z2"
+4,Wed,run,40,easy,Base,,"Easy, Z2, with 6x20s relaxed strides at the end"
+4,Thu,run,30,easy,Base,,"Easy, Z1-Z2"
+4,Fri,strength,25,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+4,Sat,run,30,easy,Base,,"Easy, Z1-Z2"
+4,Sun,run,60,long,Base,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+5,Tue,run,40,easy,Base,,"Easy, Z1-Z2"
+5,Wed,run,50,intervals,Base,,At 15 min: 15 min Z3
+5,Thu,run,40,easy,Base,,"Easy, Z1-Z2"
+5,Fri,strength,25,easy,Base,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+5,Sat,run,45,easy,Base,,"Easy, Z1-Z2"
+5,Sun,run,90,long,Base,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+6,Tue,run,40,easy,Build,,"Easy, Z1-Z2"
+6,Wed,run,60,intervals,Build,,At 15 min: 25 min Z3
+6,Thu,run,40,easy,Build,,"Easy, Z1-Z2"
+6,Fri,strength,25,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+6,Sat,run,45,easy,Build,,"Easy, Z1-Z2"
+6,Sun,run,100,long,Build,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+7,Tue,run,40,easy,Build,,"Easy, Z1-Z2"
+7,Wed,run,60,intervals,Build,,"At 15 min: 6x3 min Z4, 2 min easy between"
+7,Thu,run,40,easy,Build,,"Easy, Z1-Z2"
+7,Fri,strength,25,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+7,Sat,run,45,easy,Build,,"Easy, Z1-Z2"
+7,Sun,run,110,long,Build,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+8,Tue,run,30,easy,Build,,"Easy, Z1-Z2"
+8,Wed,run,40,easy,Build,,"Easy, Z2, with 6x20s relaxed strides at the end"
+8,Thu,run,30,easy,Build,,"Easy, Z1-Z2"
+8,Fri,strength,25,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+8,Sat,run,30,easy,Build,,"Easy, Z1-Z2"
+8,Sun,run,80,long,Build,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+9,Tue,run,40,easy,Build,,"Easy, Z1-Z2"
+9,Wed,run,55,test,Build,,WU 10 min easy; 30 min LTHR TEST; 10 min easy
+9,Thu,run,40,easy,Build,,"Easy, Z1-Z2"
+9,Fri,strength,25,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+9,Sat,run,45,easy,Build,,"Easy, Z1-Z2"
+9,Sun,run,120,long,Build,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+10,Tue,run,40,easy,Build,,"Easy, Z1-Z2"
+10,Wed,run,60,intervals,Build,,At 15 min: 25 min Z3
+10,Thu,run,40,easy,Build,,"Easy, Z1-Z2"
+10,Fri,strength,25,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+10,Sat,run,45,easy,Build,,"Easy, Z1-Z2"
+10,Sun,run,135,long,Build,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+11,Tue,run,40,easy,Build,,"Easy, Z1-Z2"
+11,Wed,run,60,intervals,Build,,"At 15 min: 6x3 min Z4, 2 min easy between"
+11,Thu,run,40,easy,Build,,"Easy, Z1-Z2"
+11,Fri,strength,25,easy,Build,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+11,Sat,run,45,easy,Build,,"Easy, Z1-Z2"
+11,Sun,run,150,long,Build,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+12,Tue,run,30,easy,Peak,,"Easy, Z1-Z2"
+12,Wed,run,40,easy,Peak,,"Easy, Z2, with 6x20s relaxed strides at the end"
+12,Thu,run,30,easy,Peak,,"Easy, Z1-Z2"
+12,Fri,strength,25,easy,Peak,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+12,Sat,run,30,easy,Peak,,"Easy, Z1-Z2"
+12,Sun,run,105,long,Peak,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+13,Tue,run,40,easy,Peak,,"Easy, Z1-Z2"
+13,Wed,run,60,intervals,Peak,,"At 15 min: 6x3 min Z4, 2 min easy between"
+13,Thu,run,40,easy,Peak,,"Easy, Z1-Z2"
+13,Fri,strength,25,easy,Peak,Strength,"Core and hips, 2-3 rounds: plank, side plank, glute bridge, single-leg squat, calf raise"
+13,Sat,run,45,easy,Peak,,"Easy, Z1-Z2"
+13,Sun,run,165,long,Peak,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+14,Tue,run,40,easy,Taper,,"Easy, Z1-Z2"
+14,Wed,run,45,intervals,Taper,,"At 15 min: 4x3 min Z4, 2 min easy between"
+14,Thu,run,40,easy,Taper,,"Easy, Z1-Z2"
+14,Sat,run,30,easy,Taper,,"Easy, Z1-Z2"
+14,Sun,run,120,long,Taper,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+15,Tue,run,40,easy,Taper,,"Easy, Z1-Z2"
+15,Wed,run,45,intervals,Taper,,"At 15 min: 4x3 min Z4, 2 min easy between"
+15,Thu,run,40,easy,Taper,,"Easy, Z1-Z2"
+15,Sat,run,30,easy,Taper,,"Easy, Z1-Z2"
+15,Sun,run,80,long,Taper,,Easy Z2. Last 15 min at goal-race effort from week 9 on.
+16,Tue,run,30,easy,Race,,Easy with 4x20s strides
+16,Thu,run,20,easy,Race,,"Easy, a few relaxed strides"
+16,Sun,race,0,race,Race,,Race day. Start slower than you want to.

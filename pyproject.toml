@@ -1,0 +1,19 @@
+[project]
+name = "ironman-coach"
+version = "0.1.0"
+description = "Your training plan + Garmin + simple, testable rules. Terminal and browser dashboard."
+requires-python = ">=3.12"
+dependencies = ["rich>=13", "garminconnect>=0.3.20"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+ironman = "ironman_coach.cli:main"
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["ironman_coach"]
