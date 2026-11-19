@@ -33,6 +33,11 @@ fi
 .venv/bin/python -m pip install -q --upgrade pip
 .venv/bin/python -m pip install -q -e ".[dev]" 2>&1 | grep -v -i "warning\|editable\|careful\|wheel\|\*\*\*\|^ *!!" || true
 
+if ! .venv/bin/ironman -h >/dev/null 2>&1; then
+  echo "Install failed. Scroll up for the error, or run: .venv/bin/python -m pip install -e ."
+  exit 1
+fi
+
 NAME="${IRONMAN_ALIAS:-ironman}"
 if grep -q "alias $NAME=" ~/.zshrc 2>/dev/null; then
   echo "Note: you already have an '$NAME' command. Run this one as $DIR/.venv/bin/ironman,"
