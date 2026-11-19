@@ -41,6 +41,13 @@ def _plain(markup: str) -> str:
     return Text.from_markup(markup).plain
 
 
+def _send_label(sessions) -> str:
+    sports = {s.sport for s in sessions}
+    if sports <= {"bike", "strength", "race"}:
+        return "Send to Zwift"
+    return "Send to watch / Zwift" if "bike" in sports else "Send to watch"
+
+
 def _ctx(today: date) -> dict:
     with LOCK:
         return cli.build(today, sync=False)
@@ -65,6 +72,40 @@ def _session_line(s, st, link=True):
             + (f' <span class="adj">adjusted</span>' if s.note else "")
             + f'<span class="st {state_cls}">{icon}</span>')
     return f'<a class="sess" href="/day/{s.day.isoformat()}">{body}</a>' if link else f'<div class="sess">{body}</div>'
+
+
+ZONE_COLORS = ["#7aa7c7", "#4fa36b", "#e8b63b", "#e8743b", "#d9534f"]
+
+
+def run_html(r: dict) -> str:
+    u = r["units"]
+    stats = [P.fmt_minutes(r["minutes"])] + ([f"{r['dist']} {u}"] if r.get("dist") else []) + \
+            ([f"{r['pace']} /{u}"] if r.get("pace") else []) + ([f"{round(r['avg_hr'])} bpm"] if r.get("avg_hr") else []) + \
+            ([f"{r['cadence']} spm"] if r.get("cadence") else [])
+    zp = r.get("zone_pct")
+    strip = ('<div class="zstrip">' + "".join(f'<div style="width:{p}%;background:{ZONE_COLORS[i]}" title="Z{i + 1} {p}%"></div>'
+                                             for i, p in enumerate(zp) if p) + "</div>"
+             '<div class="muted small">' + " · ".join(f"Z{i + 1} {p}%" for i, p in enumerate(zp) if p) + "</div>") \
+        if zp else '<div class="muted small">No heart-rate zones for this run.</div>'
+    laps = (f'<div class="muted small">Fastest {u} {r["fastest"][1]}: {r["fastest"][0]} · slowest {u} '
+            f'{r["slowest"][1]}: {r["slowest"][0]}</div>') if r.get("fastest") else ""
+    verdict = "".join(f'<div class="instead">→ {e(v)}</div>' for v in r["verdict"])
+    planned = f' <span class="muted small">planned: {e(r["session_title"])}</span>' if r.get("session_title") else ""
+    return (f'<div class="run"><div><b>{e(r["date"])}</b> {e(r["name"])}{planned}</div>'
+            f'<div>{" · ".join(e(x) for x in stats)}</div>{strip}{laps}{verdict}</div>')
+
+
+def eff_html(eff: dict | None) -> str:
+    if not eff:
+        return ""
+    u = eff["units"]
+    if "change_pct" in eff:
+        cls = "okmsg" if eff["change_pct"] > 0 else "adj"
+        word = "faster" if eff["change_pct"] > 0 else "slower"
+        return (f'<div class="{cls}">Easy pace at {eff["ref_hr"]} bpm: {eff["then"]} → {eff["now"]} /{u} '
+                f'({abs(eff["change_pct"])}% {word} than 3-6 weeks ago)</div>')
+    return (f'<div class="muted small">Easy pace at {eff["ref_hr"]} bpm: {eff.get("now") or eff.get("then")} /{u}. '
+            "A trend shows up after a few weeks of easy runs.</div>")
 
 
 def page(title: str, body: str) -> str:
@@ -99,7 +140,7 @@ def dashboard_html(ctx: dict, week_override: int | None = None) -> str:
         '<div class="rest">Rest day. Sleep, eat, walk.</div>'
     sendable = any(s.sport in ("swim", "run", "bike") for s in todays)
     t_actions = (f'<div class="actions"><a class="btn" href="/day/{today.isoformat()}">What to do</a>'
-                 f'<button class="ghost" onclick="act(\'/api/send/{today.isoformat()}\')">Send to watch / Zwift</button>'
+                 f'<button class="ghost" onclick="act(\'/api/send/{today.isoformat()}\')">{_send_label(todays)}</button>'
                  "</div>") if sendable else ""
     sig = "".join(f'<div class="sig"><span class="lvl {LEVEL_CLASS[g.level]}"></span><b>{e(g.name)}</b>'
                   f'<span>{e(g.value)}</span><span class="muted">{e(g.why)}</span></div>' for g in ctx["signals"])
@@ -137,6 +178,11 @@ def dashboard_html(ctx: dict, week_override: int | None = None) -> str:
     done, total = engine.plan_compliance(statuses, today)
     if total:
         prog += f'<div class="prow"><span>Plan so far</span>{_bar(done, total, "acc")}<span class="muted">{done}/{total} sessions</span></div>'
+    f = ctx.get("fatigue")
+    if f and f.get("ratio") is not None and f["history_days"] >= 28:
+        cls = "okmsg" if f["ratio"] < 1.3 else "adj"
+        prog += (f'<div class="prow"><span>Fatigue</span><span class="{cls}">{f["ratio"]}x fitness</span>'
+                 f'<span class="muted">7-day {f["atl"]} vs 42-day {f["ctl"]}</span></div>')
     peaks, best = engine.plan_peaks(plan), ctx.get("bests", {})
     ms = "".join(f'<div class="prow"><span class="{sp}">Longest {nm}</span>{_bar(best.get(sp, 0), peaks[sp], sp)}'
                  f'<span class="muted">{_amount(sp, best.get(sp, 0))} of {_amount(sp, peaks[sp])}</span></div>'
@@ -146,10 +192,14 @@ def dashboard_html(ctx: dict, week_override: int | None = None) -> str:
             f'<input type="date" name="day" value="{today.isoformat()}"><input type="number" name="minutes" '
             f'placeholder="minutes free" min="0"><button>Fit it</button></form>')
 
+    runs = ctx.get("runs") or []
+    last_run = (f'<section class="card"><h2>Last run <a class="small muted" href="/runs">all runs ›</a></h2>'
+                f'{run_html(runs[0])}{eff_html(ctx.get("efficiency"))}</section>') if runs else ""
     body = f"""{head}
 <section class="grid2"><div class="card"><h2>Today</h2>{t_html}{t_actions}</div>
 <div class="card"><h2>Recovery signals</h2>{sig}{notes}</div></section>
 <section class="card"><h2>Should anything change?</h2>{adv}{busy}</section>
+{last_run}
 <section class="card">{nav}<div class="week">{cols}</div>
 <div class="legend">✓ done · ◐ partial · ✕ missed · ● today · adjusted = changed by you</div></section>
 <section class="grid2"><div class="card"><h2>This week</h2>{prog}</div>
@@ -218,7 +268,7 @@ def day_html(ctx: dict, day: date) -> str:
         cards += c + "</section>"
     if any(s.sport in ("swim", "run", "bike") for s in sessions):
         cards += (f'<div class="actions"><button onclick="act(\'/api/send/{day.isoformat()}\')">'
-                  "Send to watch / Zwift</button></div>")
+                  f"{_send_label(sessions)}</button></div>")
     return page(f"{day:%a %b %d}", head + cards)
 
 
@@ -249,6 +299,15 @@ class Handler(BaseHTTPRequestHandler):
                 q = parse_qs(u.query)
                 wk = int(q["week"][0]) if "week" in q else None
                 return self._send(200, dashboard_html(_ctx(today), wk))
+            if u.path == "/runs":
+                ctx = _ctx(today)
+                runs = ctx.get("runs") or []
+                body = ('<header><div><a href="/" class="muted">‹ Dashboard</a><h1>Your runs</h1>'
+                        '<div class="sub">Last 6 weeks</div></div></header>'
+                        f'<section class="card">{eff_html(ctx.get("efficiency")) or "<p>No easy-run trend yet.</p>"}</section>'
+                        + "".join(f'<section class="card">{run_html(r)}</section>' for r in runs)
+                        + ("" if runs else '<section class="card"><p>No runs yet.</p></section>'))
+                return self._send(200, page("Runs", body))
             if u.path.startswith("/day/"):
                 return self._send(200, day_html(_ctx(today), date.fromisoformat(u.path[5:15])))
             return self._send(404, page("Not found", "<p>Not found. <a href='/'>Dashboard</a></p>"))
@@ -420,7 +479,8 @@ table{width:100%;border-collapse:collapse;font-size:13.5px}th{text-align:left;co
 th,td{padding:5px 8px 5px 0;border-bottom:1px solid var(--line)}
 .detail{background:var(--bg);border-radius:8px;padding:9px 11px;font-family:ui-monospace,Menlo,monospace;font-size:13px}
 .drill{padding:7px 0;border-bottom:1px solid var(--line)}.drill .why{color:var(--acc);font-size:13px}
-.err{background:#d9534f22;color:var(--bad);padding:10px 14px;border-radius:10px;margin-bottom:14px}
+.zstrip{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:8px 0 3px}
+.run>div{margin-bottom:3px}.err{background:#d9534f22;color:var(--bad);padding:10px 14px;border-radius:10px;margin-bottom:14px}
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);
 padding:10px 16px;border-radius:10px;font-size:13.5px;max-width:90%;opacity:0;transition:opacity .25s;pointer-events:none}
 #toast.show{opacity:1}code{background:var(--bg);padding:1px 5px;border-radius:5px}

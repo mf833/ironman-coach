@@ -67,6 +67,8 @@ def zone_rows(sport: str, zones: list[int], ftp: int | None, hr: dict, swim_t: f
             off = {1: (15, 25), 2: (8, 15), 3: (3, 8), 4: (0, 3), 5: (-5, 0)}[z]
             target = f"{fmt_pace(swim_t + off[0])}-{fmt_pace(swim_t + off[1])} /100yd"
         lo_hi = hr_prof.get(z)
-        bpm = f"{lo_hi[0]}-{lo_hi[1]} bpm" if lo_hi and sport != "swim" else ""
+        bpm = ""
+        if lo_hi and sport != "swim":
+            bpm = f"under {lo_hi[1] + 1} bpm" if not lo_hi[0] else f"{lo_hi[0]}-{lo_hi[1]} bpm"
         rows.append((f"Z{z}", target, bpm, f"{rpe} · {feel}"))
     return rows

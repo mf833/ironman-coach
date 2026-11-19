@@ -1,7 +1,7 @@
 """The rules engine.
 
 Plain, testable rules. No AI here: every recommendation comes from a rule in
-this file, and each one says which rule fired and why. See RULES.md.
+this file, and each one says which rule fired and why. See "How it works" in README.md.
 """
 from __future__ import annotations
 
@@ -151,7 +151,7 @@ def _round100(x: float) -> int:
     return max(100, int(100 * round(x / 100)))
 
 
-def advise(plan, statuses, signals, today, state, cfg, activities=()) -> list[Advice]:
+def advise(plan, statuses, signals, today, state, cfg, activities=(), insights=(), fatigue=None) -> list[Advice]:
     notes = state.get("notes", {})
     out: list[Advice] = []
     out += rule_sick_or_pain(plan, statuses, today, notes)
@@ -163,6 +163,9 @@ def advise(plan, statuses, signals, today, state, cfg, activities=()) -> list[Ad
     held = {sid for a in week for sid in a.changes}
     out += rule_long_session_gate(plan, activities, today, cfg, skip=held)
     out += rule_busy(plan, statuses, today, state.get("busy", {}))
+    out += rule_run_insights(plan, statuses, today, list(insights))
+    if fatigue:
+        out += rule_fatigue(plan, statuses, today, fatigue, cfg)
     dismissed = set(state.get("dismissed", []))
     return [a for a in out if a.id not in dismissed]
 
@@ -376,6 +379,64 @@ def rule_busy(plan, statuses, today, busy: dict) -> list[Advice]:
             f"You have {avail} min on {day:%a}; the plan has about {fmt_minutes(total)}.",
             "; ".join(parts) + ". Cut warm-up and cool-down first and keep the main set.", changes))
     return out
+
+
+def rule_run_insights(plan, statuses, today, insights) -> list[Advice]:
+    """R7-R9. What your recent runs say: easy runs too hard, aerobic base ready, high drift."""
+    out = []
+    easy = [i for i in insights if i.get("session_kind") in ("easy", "long", "recovery") and "above_pct" in i][:3]
+    hard = [i for i in easy if i["above_pct"] >= 25]
+    if len(easy) >= 2 and len(hard) >= 2:
+        out.append(Advice(f"easy-too-hard:{hard[0]['date']}", "insight", "info", "Your easy runs are too hard",
+                          f"{len(hard)} of your last {len(easy)} easy runs spent 25%+ above the planned zone. "
+                          "Easy days build the aerobic base only if they're actually easy; slow down or walk the hills."))
+    longs = [i for i in insights if i.get("session_kind") == "long" and i.get("decoupling") is not None
+             and i["minutes"] >= 60][:2]
+    if longs and longs[0]["decoupling"] > 10:
+        out.append(Advice(f"drift:{longs[0]['date']}", "insight", "info", "Big heart-rate drift on your last long run",
+                          f"{longs[0]['decoupling']}% drift. Start the next one slower, eat from minute 30-45, and "
+                          "drink to thirst. It's usually pacing, fuel or heat, not fitness."))
+    elif len(longs) == 2 and all(i["decoupling"] < 5 for i in longs):
+        nxt = next((s for s in plan if s.sport == "run" and s.kind == "long"
+                    and today <= s.day <= today + timedelta(days=7)), None)
+        if nxt:
+            new = _round5(nxt.amount * 1.10)
+            out.append(Advice(f"long-ready:{nxt.id}", "insight", "suggest", "Your aerobic base is holding up",
+                              f"Your last two long runs drifted under 5% ({longs[0]['decoupling']}% and "
+                              f"{longs[1]['decoupling']}%). If you feel good, you can go a little longer.",
+                              f"{nxt.title} {nxt.day:%a}: {nxt.label()} -> {fmt_minutes(new)}. Optional.",
+                              {nxt.id: {"amount": new, "note": "extended 10% (low drift on recent long runs)"}}))
+    return out
+
+
+def rule_fatigue(plan, statuses, today, f, cfg) -> list[Advice]:
+    """R10. Fatigue (7-day load) much higher than fitness (42-day load): ease the next two days."""
+    t = cfg["thresholds"]
+    if f.get("ratio") is None or f["history_days"] < 28 or f["ctl"] < 10:
+        return []
+    r = f["ratio"]
+    if r < t.get("fatigue_warn_ratio", 1.3):
+        return []
+    why = (f"Your fatigue (last 7 days, {f['atl']}) is {r}x your fitness (last 42 days, {f['ctl']}). "
+           "Load ramping this fast is when people get hurt or run down.")
+    if r < t.get("fatigue_high_ratio", 1.5):
+        return [Advice(f"fatigue-warn:{today}", "fatigue", "info", "Fatigue is building", why +
+                       " No change needed, just keep easy days easy.")]
+    nxt = [s for s in plan if today <= s.day <= today + timedelta(days=1) and s.sport != "race"
+           and statuses.get(s.id) and statuses[s.id].state in ("today", "upcoming", "partial")]
+    changes, parts = {}, []
+    for s in nxt:
+        if s.kind in ("intervals", "test"):
+            changes[s.id] = {"kind": "easy", "detail": f"Easy Z1-Z2 instead of: {s.detail}", "note": "made easy (fatigue)"}
+            parts.append(f"{s.title} {s.day:%a}: all easy")
+        elif s.sport != "swim":
+            new = _round5(s.amount * 0.7)
+            changes[s.id] = {"amount": new, "note": "shortened 30% (fatigue)"}
+            parts.append(f"{s.title} {s.day:%a}: {s.label()} -> {fmt_minutes(new)}")
+    if not changes:
+        return []
+    return [Advice(f"fatigue:{today}", "fatigue", "suggest", "Ease off for two days", why,
+                   "; ".join(parts) + ".", changes)]
 
 
 # ---- progress -------------------------------------------------------------------

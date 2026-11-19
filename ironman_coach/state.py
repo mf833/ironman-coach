@@ -23,6 +23,11 @@ DEFAULT_CONFIG = {
     # Your race and plan. `ironman setup` fills these in.
     "race": {"name": "My race", "date": None},
     "plan": "plans/my-plan.csv",
+    # Where your data comes from: "garmin" (direct) or "intervals" (intervals.icu,
+    # for Coros, Polar, Suunto, Wahoo, Apple Watch and others).
+    "source": "garmin",
+    "intervals": {"athlete_id": "", "api_key": ""},
+    "units": "mi",
     # What you can comfortably do today. Used as the starting reference for the
     # long-session gate until your Garmin history shows more.
     "baseline": {"bike_min": 60, "run_min": 30, "swim_yd": 1000},
@@ -36,6 +41,8 @@ DEFAULT_CONFIG = {
         "partial_ratio": 0.3,
         "week_low_compliance": 0.6,
         "week_high_compliance": 1.2,
+        "fatigue_warn_ratio": 1.3,
+        "fatigue_high_ratio": 1.5,
     },
     "sync_every_hours": 3,
     # Your numbers. null = use what Garmin has. Set with `ironman set ftp 200`.

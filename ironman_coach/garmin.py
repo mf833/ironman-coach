@@ -81,7 +81,7 @@ def connect(interactive: bool = False):
     return api
 
 
-def sync(days_back: int = 42, api=None) -> dict:
+def sync(days_back: int = 90, api=None, previous: dict | None = None) -> dict:
     """Pull recent activities and daily recovery data. Returns the cache dict."""
     api = api or connect()
     today = date.today()
@@ -99,7 +99,19 @@ def sync(days_back: int = 42, api=None) -> dict:
                 return None
         days[d] = normalize_day(d, safe(api.get_hrv_data), safe(api.get_user_summary), safe(api.get_sleep_data))
 
+    from .insights import normalize_laps, normalize_zone_secs
     from .zones import normalize_ftp, normalize_hr_zones
+    details = dict((previous or {}).get("details") or {})
+    for a in activities:
+        if a["sport"] != "run" or str(a["id"]) in details:
+            continue
+        try:
+            details[str(a["id"])] = {"zone_secs": normalize_zone_secs(api.get_activity_hr_in_timezones(a["id"])),
+                                     "laps": normalize_laps(api.get_activity_splits(a["id"]))}
+        except Exception:
+            pass
+    keep = {str(a["id"]) for a in activities}
+    details = {k: v for k, v in details.items() if k in keep}
     try:
         hr_zones = normalize_hr_zones(api.get_heart_rate_zones())
     except Exception:
@@ -110,6 +122,8 @@ def sync(days_back: int = 42, api=None) -> dict:
         ftp = None
 
     return {
+        "source": "garmin",
+        "details": details,
         "hr_zones": {k: {str(z): v for z, v in zs.items()} for k, zs in hr_zones.items()},
         "garmin_ftp": ftp,
         "synced_at": datetime.now().isoformat(timespec="seconds"),

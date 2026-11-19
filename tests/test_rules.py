@@ -246,3 +246,91 @@ def test_workout_builders():
         if s.sport == "run" and s.kind in ("intervals", "test"):
             run_workout(s, structure(s.detail, s.amount))
     assert structure("Easy, Z1-Z2, conversational", 45) is None
+
+
+# ---- run insights, intervals.icu, fatigue ---------------------------------------------
+REAL_ZONES = [{"zoneNumber": 1, "secsInZone": 554.9}, {"zoneNumber": 2, "secsInZone": 2027.7},
+              {"zoneNumber": 3, "secsInZone": 118.0}, {"zoneNumber": 4, "secsInZone": 0}, {"zoneNumber": 5, "secsInZone": 0}]
+REAL_LAPS = {"lapDTOs": [{"distance": 1609.34, "duration": 941.8, "averageHR": 158, "averageRunCadence": 128},
+                         {"distance": 1609.34, "duration": 854.1, "averageHR": 157, "averageRunCadence": 147},
+                         {"distance": 1592.4, "duration": 904.8, "averageHR": 160, "averageRunCadence": 148}]}
+
+
+def test_zone_and_lap_normalizing():
+    from ironman_coach.insights import normalize_zone_secs, normalize_laps
+    assert [round(x) for x in normalize_zone_secs(REAL_ZONES)] == [555, 2028, 118, 0, 0]
+    assert normalize_zone_secs([10, 20, 30, 40, 50, 60, 70]) == [10, 20, 30, 40, 180]  # 7 zones folded
+    assert len(normalize_laps(REAL_LAPS)) == 3
+
+
+def test_decoupling_math():
+    from ironman_coach.insights import decoupling_from_laps
+    steady = [{"m": 1600, "s": 600, "hr": 150}] * 6
+    assert decoupling_from_laps(steady) == 0.0
+    drift = [{"m": 1600, "s": 600, "hr": 150}] * 3 + [{"m": 1600, "s": 600, "hr": 165}] * 3
+    assert decoupling_from_laps(drift) == 9.1  # (1/150 - 1/165) / (1/150)
+    assert decoupling_from_laps(steady[:2]) is None  # under 30 minutes
+
+
+def test_easy_run_too_hard_verdict():
+    from ironman_coach.insights import run_insight
+    s = next(x for x in full_plan() if x.sport == "run" and x.kind == "easy")
+    a = {"id": 1, "name": "Run", "date": s.day.isoformat(), "minutes": 40, "meters": 6000, "avg_hr": 165}
+    r = run_insight(a, {"zone_secs": [0, 1200, 1200, 0, 0], "laps": []}, s)
+    assert r["above_pct"] == 50 and "too hard" in r["verdict"][0]
+    r2 = run_insight(a, {"zone_secs": [600, 1800, 0, 0, 0], "laps": []}, s)
+    assert "Nicely controlled" in r2["verdict"][0]
+
+
+def test_easy_efficiency_trend():
+    from ironman_coach.insights import easy_efficiency
+    today = date(2027, 2, 1)
+    mk = lambda d, dist, hr: {"date": d, "dist": dist, "minutes": 40, "avg_hr": hr, "zone_pct": [20, 70, 10, 0, 0],
+                              "units": "mi"}
+    runs = [mk("2027-01-28", 4.0, 150), mk("2027-01-25", 4.0, 150), mk("2026-12-28", 3.6, 150)]
+    eff = easy_efficiency(runs, today)
+    assert eff["change_pct"] == 11.1 and eff["now"] == "10:00"
+
+
+def test_intervals_normalizing():
+    from ironman_coach import intervals as IC
+    a = IC.normalize_activity({"id": "i1", "type": "VirtualRide", "start_date_local": "2026-12-08T07:00:00",
+                               "moving_time": 3600, "distance": 30000, "average_heartrate": 135})
+    assert a["sport"] == "bike" and a["minutes"] == 60 and a["date"] == "2026-12-08"
+    assert IC.normalize_activity({"type": "Yoga"}) is None
+    det = IC.activity_detail({"icu_hr_zone_times": [100, 200, 0, 0, 0, 0, 10], "decoupling": 3.2})
+    assert det["zone_secs"] == [100, 200, 0, 0, 10] and det["decoupling"] == 3.2
+    rows = [{"id": f"2026-11-{d:02d}", "hrv": 40 + (d % 3), "restingHR": 55, "sleepSecs": 27000} for d in range(1, 20)]
+    days = IC.normalize_wellness(rows, date(2026, 11, 19))
+    d = days["2026-11-19"]
+    assert d["hrv"]["balanced_low"] < d["hrv"]["last_night"] + 5 and d["rhr_7d"] == 55 and d["sleep_h"] == 7.5
+    zones, ftp = IC.zones_from_settings({"sportSettings": [
+        {"types": ["Run"], "hr_zones": [138, 154, 160, 171, 176, 181, 190]},
+        {"types": ["Ride", "VirtualRide"], "hr_zones": [130, 145, 155, 165, 175, 185, 195], "ftp": 210}]})
+    assert zones["running"]["1"] == [0, 138] and zones["running"]["2"] == [139, 154] and ftp == 210
+
+
+def test_load_and_fatigue():
+    from ironman_coach.load import session_load, fatigue_series
+    a = {"id": 1, "sport": "run", "date": "2027-01-01", "minutes": 60, "avg_hr": None}
+    assert session_load(a, {"zone_secs": [0, 3600, 0, 0, 0]}, {}) == 120.0   # 60 min x Z2
+    assert session_load(a, None, {}) == 120.0                               # no zones: assume Z2
+    today = date(2027, 2, 15)
+    steady = [{"id": i, "sport": "run", "date": (today - timedelta(days=i)).isoformat(), "minutes": 60,
+               "avg_hr": None} for i in range(0, 80)]
+    f = fatigue_series(steady, {}, {}, today)
+    assert 0.95 <= f["ratio"] <= 1.3  # steady training: fatigue roughly equals fitness
+    spike = steady + [{"id": 1000 + i, "sport": "bike", "date": (today - timedelta(days=i)).isoformat(),
+                       "minutes": 120, "avg_hr": None} for i in range(0, 7)]
+    f2 = fatigue_series(spike, {}, {}, today)
+    assert f2["ratio"] > 1.5
+
+
+def test_fatigue_rule_eases_next_two_days():
+    plan = full_plan()
+    statuses, _ = engine.match(plan, [], date(2027, 2, 2), CFG)
+    adv = engine.rule_fatigue(plan, statuses, date(2027, 2, 2),
+                              {"ratio": 1.7, "atl": 170, "ctl": 100, "history_days": 60}, CFG)
+    assert adv and adv[0].severity == "suggest" and adv[0].changes
+    assert not engine.rule_fatigue(plan, statuses, date(2027, 2, 2),
+                                   {"ratio": 1.7, "atl": 17, "ctl": 10, "history_days": 10}, CFG)  # too little history

@@ -101,6 +101,8 @@ def render(console: Console, ctx: dict) -> None:
         console.print(Panel("[green]Nothing to change. Train as planned.[/]", title="Should anything change?",
                             title_align="left", border_style="grey50"))
 
+    if ctx.get("runs"):
+        console.print(run_card(ctx["runs"][0], ctx.get("efficiency")))
     console.print(week_table(plan, statuses, wk, today))
 
     # Progress
@@ -112,6 +114,11 @@ def render(console: Console, ctx: dict) -> None:
     done, total = engine.plan_compliance(statuses, today)
     if total:
         prog.add_row("[bold]Plan so far[/]", bar(done, total), f"{done}/{total} sessions")
+    f = ctx.get("fatigue")
+    if f and f.get("ratio") is not None and f["history_days"] >= 28:
+        col = "green" if f["ratio"] < 1.3 else "yellow" if f["ratio"] < 1.5 else "red"
+        prog.add_row("[bold]Fatigue[/]", Text(f"{f['ratio']}x fitness", style=col),
+                     f"[dim]7-day {f['atl']} vs 42-day {f['ctl']}[/]")
 
     best = ctx.get("bests", {})
     ms = Table(box=None, show_header=False, padding=(0, 1))
@@ -137,7 +144,7 @@ def commands() -> Table:
         ("ironman week next", "next week"), ("ironman apply 1", "take suggestion 1"),
         ("ironman dismiss 1", "skip suggestion 1"), ("ironman undo", "undo last change"),
         ("ironman note tired", "or sick / pain / clear"), ("ironman busy wed 45", "only 45 min Wed"),
-        ("ironman swap tue wed", "swap two days"), ("ironman move sat sun", "move a day"),
+        ("ironman swap tue wed", "swap two days"), ("ironman runs", "your recent runs"),
         ("ironman web", "dashboard in your browser"), ("ironman -h", "all commands"),
     ]
     for _ in range(3):
@@ -333,3 +340,54 @@ def swim_table(s):
     else:
         out.append(Text(f"These sets add up to {tot:,} yd; the plan lists {s.amount:,}. Either is fine.", style=ACCENT))
     return Group(*out)
+
+
+# ---- run insights -------------------------------------------------------------------
+ZONE_COLOR = ["#7aa7c7", "#4fa36b", "#e8b63b", "#e8743b", "#d9534f"]
+
+
+def zone_strip(pct, width=30) -> Text:
+    t = Text()
+    if not pct:
+        return Text("no heart-rate zones", style="dim")
+    for i, p in enumerate(pct):
+        t.append("█" * int(round(p / 100 * width)), style=ZONE_COLOR[i])
+    t.append("  " + "  ".join(f"Z{i + 1} {p}%" for i, p in enumerate(pct) if p), style="dim")
+    return t
+
+
+def run_card(r: dict, eff: dict | None = None, title: str = "Last run") -> Panel:
+    u = r["units"]
+    head = Text()
+    head.append(f"{r['date']}  {r['name']}", style="bold")
+    if r.get("session_title"):
+        head.append(f"  (planned: {r['session_title']})", style="dim")
+    stats = [fmt_minutes(r["minutes"])]
+    if r.get("dist"):
+        stats.append(f"{r['dist']} {u}")
+    if r.get("pace"):
+        stats.append(f"{r['pace']} /{u}")
+    if r.get("avg_hr"):
+        stats.append(f"{round(r['avg_hr'])} bpm")
+    if r.get("cadence"):
+        stats.append(f"{r['cadence']} spm")
+    parts = [head, Text("  ·  ".join(stats)), zone_strip(r.get("zone_pct"))]
+    if r.get("fastest"):
+        parts.append(Text(f"Fastest {u} {r['fastest'][1]}: {r['fastest'][0]}   ·   slowest {u} {r['slowest'][1]}: "
+                          f"{r['slowest'][0]}", style="dim"))
+    for v in r["verdict"]:
+        parts.append(Text("→ " + v, style=ACCENT))
+    if eff:
+        parts.append(efficiency_line(eff))
+    return Panel(Group(*parts), title=title, title_align="left", border_style="grey50")
+
+
+def efficiency_line(eff: dict) -> Text:
+    u = eff["units"]
+    if "change_pct" in eff:
+        word = "faster" if eff["change_pct"] > 0 else "slower"
+        return Text(f"Easy pace at {eff['ref_hr']} bpm: {eff['then']} -> {eff['now']} /{u} "
+                    f"({abs(eff['change_pct'])}% {word} than 3-6 weeks ago). Same effort, that's fitness.",
+                    style="green" if eff["change_pct"] > 0 else "yellow")
+    return Text(f"Easy pace at {eff['ref_hr']} bpm: {eff.get('now') or eff.get('then')} /{u}. "
+                "A trend shows up after a few weeks of easy runs.", style="dim")

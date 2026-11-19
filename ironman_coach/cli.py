@@ -36,11 +36,16 @@ def maybe_sync(cfg, force=False, quiet=False) -> tuple[dict | None, str | None]:
     if fresh and not force:
         return cache, None
     try:
+        def _do():
+            if cfg.get("source") == "intervals":
+                from . import intervals
+                return intervals.sync(cfg)
+            return garmin.sync(previous=cache)
         if quiet:
-            cache = garmin.sync()
+            cache = _do()
         else:
-            with console.status("Syncing Garmin…"):
-                cache = garmin.sync()
+            with console.status("Syncing your watch data…"):
+                cache = _do()
         S.save_cache(cache)
         st = S.load_state()
         bests = st.setdefault("bests", {})
@@ -74,13 +79,17 @@ def build(today: date, sync=True, force=False, quiet=False) -> dict:
     cache = cache or {"activities": [], "days": {}}
     plan = P.apply_overrides(base_plan, st["overrides"])
     statuses, extras = engine.match(plan, cache["activities"], today, cfg)
+    from . import insights as I
+    runs = I.recent_insights(cache["activities"], cache.get("details") or {}, statuses, today, cfg.get("units", "mi"))
     signals = engine.recovery_signals(cache["days"].get(today.isoformat()), st["notes"].get(today.isoformat()), cfg)
-    advice = engine.advise(plan, statuses, signals, today, st, cfg, cache["activities"])
-    st["last_advice"] = [{"id": a.id, "title": a.title, "changes": a.changes} for a in advice]
+    from .load import fatigue_series
+    fatigue = fatigue_series(cache["activities"], cache.get("details") or {}, cache.get("hr_zones") or {}, today)
+    advice = engine.advise(plan, statuses, signals, today, st, cfg, cache["activities"], runs, fatigue)
+    st["last_advice"] = [{"id": a.id, "title": a.title, "why": a.why, "changes": a.changes} for a in advice]
     S.save_state(st)
     return {"today": today, "plan": plan, "statuses": statuses, "extras": extras, "signals": signals,
             "advice": advice, "activities": cache["activities"], "synced_at": cache.get("synced_at", "")[:16].replace("T", " "),
-            "sync_error": err, "cache": cache, "bests": _bests(st, cache["activities"])}
+            "sync_error": err, "cache": cache, "runs": runs, "fatigue": fatigue, "efficiency": I.easy_efficiency(runs, today), "bests": _bests(st, cache["activities"])}
 
 
 def _bests(st: dict, activities: list) -> dict:
@@ -110,7 +119,7 @@ def cmd_apply(n: int, dismiss=False, say=None):
             st["overrides"].setdefault(sid, {}).update(ch)
         st["dismissed"].append(a["id"])
         st["applied_log"].append({"at": datetime.now().isoformat(timespec="seconds"), "id": a["id"],
-                                  "title": a["title"], "before": before})
+                                  "title": a["title"], "why": a.get("why", ""), "before": before})
         say(f"[green]Applied:[/] {a['title']}. Run `ironman undo` to take it back.")
     S.save_state(st)
 
@@ -160,6 +169,7 @@ def cmd_send(ctx, day: date, say=None):
     st = S.load_state()
     sent = st.setdefault("sent", {})
     api = None
+    garmin_ok = S.load_config().get("source", "garmin") == "garmin"
     for s in sessions:
         if s.sport == "bike":
             folder = W.zwift_folder()
@@ -172,6 +182,9 @@ def cmd_send(ctx, day: date, say=None):
             else:
                 say(f"[yellow]Zwift:[/] couldn't find your Zwift workouts folder, so it's in {path}. "
                               "Copy it to Documents/Zwift/Workouts/<your number>/.")
+            continue
+        if not garmin_ok:
+            say(f"{s.title}: sending to the watch works with Garmin only for now. Use `ironman today` for the details.")
             continue
         if s.sport == "run":
             plan = W.structure(s.detail, s.amount)
@@ -231,6 +244,11 @@ def cmd_setup():
         plan_path = "plans/my-plan.csv"
     else:
         plan_path = input("Path to your plan CSV: ").strip() or "plans/my-plan.csv"
+    src = input("Your watch: 1. Garmin  2. Something else (Coros, Polar, Suunto, Wahoo, Apple) via intervals.icu "
+                f"[{'2' if cfg.get('source') == 'intervals' else '1'}]: ").strip()
+    cfg["source"] = "intervals" if src == "2" or (not src and cfg.get("source") == "intervals") else "garmin"
+    units = input(f"Miles or km? [{cfg.get('units', 'mi')}]: ").strip().lower()
+    cfg["units"] = "km" if units.startswith("k") else "mi" if units.startswith("m") else cfg.get("units", "mi")
     ftp = input(f"Bike FTP in watts, if you know it [{cfg.get('ftp') or 'skip'}]: ").strip()
     cfg.update(race={"name": name, "date": d}, plan=plan_path)
     if ftp.isdigit():
@@ -242,7 +260,25 @@ def cmd_setup():
     except (NotSetUp, P.PlanError) as ex:
         console.print(f"[red]{ex}[/]")
         return
-    console.print("Next: [bold]ironman login[/] to connect Garmin, then [bold]ironman[/] or [bold]ironman web[/].")
+    who = "intervals.icu" if cfg["source"] == "intervals" else "Garmin"
+    console.print(f"Next: [bold]ironman login[/] to connect {who}, then [bold]ironman[/] or [bold]ironman web[/].")
+
+
+def cmd_login_intervals():
+    cfg_path = S.CONFIG
+    cfg = json.loads(cfg_path.read_text()) if cfg_path.exists() else {}
+    console.print("In intervals.icu: Settings > Developer Settings. Copy your athlete ID (like i12345) and API key.")
+    aid = input("Athlete ID: ").strip()
+    key = input("API key: ").strip()
+    cfg["source"] = "intervals"
+    cfg["intervals"] = {"athlete_id": aid, "api_key": key}
+    cfg_path.write_text(json.dumps(cfg, indent=2))
+    try:
+        from . import intervals
+        intervals.Client(aid, key).get(f"/athlete/{aid}")
+        console.print("[green]Connected to intervals.icu.[/] Your key is saved in config.json, which never leaves your computer.")
+    except Exception as ex:
+        console.print(f"[red]Couldn't connect:[/] {ex}. Check the ID and key and run `ironman login` again.")
 
 
 def cmd_set(what, values):
@@ -306,6 +342,8 @@ def main(argv=None):
     sub.add_parser("explain", help="plain-English explanation from Claude (optional)")
     t = sub.add_parser("today", help="exactly what to do today: zones, watts, heart rate, how")
     t.add_argument("day", nargs="?", default="today", help="or: tomorrow, sat, 2026-12-05")
+    sub.add_parser("history", help="every change you've applied, and why")
+    sub.add_parser("runs", help="your recent runs: zones, drift, pace, and your easy-pace trend")
     sd = sub.add_parser("send", help="send the day's swim/run to your watch and ride to Zwift: ironman send today")
     sd.add_argument("day", nargs="?", default="today")
     sw = sub.add_parser("swap", help="swap two days' training: ironman swap tue wed")
@@ -336,6 +374,9 @@ def main(argv=None):
             return web.install_always(a.port)
         return web.serve(a.port, open_browser=not a.no_browser)
     if a.cmd == "login":
+        cfg = S.load_config()
+        if cfg.get("source") == "intervals":
+            return cmd_login_intervals()
         garmin.connect(interactive=True)
         console.print("[green]Logged in. Tokens saved to ~/.garminconnect.[/]")
         return
@@ -414,6 +455,29 @@ def main(argv=None):
         return
     if a.cmd == "explain":
         return cmd_explain(ctx)
+    if a.cmd == "history":
+        log = S.load_state().get("applied_log", [])
+        if not log:
+            console.print("No changes applied yet. The plan is exactly as written.")
+        for item in reversed(log):
+            console.print(f"[bold]{item['at'][:16].replace('T', ' ')}[/]  {item['title']}")
+            if item.get("why"):
+                console.print(f"   Why: {item['why']}")
+            for sid in item.get("before", {}):
+                o = S.load_state()["overrides"].get(sid, {})
+                if o.get("note"):
+                    console.print(f"   [dim]{sid[:10]} {sid.split('-')[3]}: {o['note']}[/]")
+        return
+    if a.cmd == "runs":
+        from .dashboard import run_card, efficiency_line
+        if not ctx["runs"]:
+            console.print("No runs in the last 6 weeks yet.")
+            return
+        if ctx.get("efficiency"):
+            console.print(efficiency_line(ctx["efficiency"]))
+        for r in ctx["runs"][:8]:
+            console.print(run_card(r, title="Run"))
+        return
     if a.cmd == "send":
         return cmd_send(ctx, parse_day(a.day, today))
     if a.cmd == "today":
