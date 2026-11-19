@@ -215,6 +215,47 @@ def cmd_send(ctx, day: date, say=None):
             say(f"[red]Couldn't reach Garmin:[/] {type(e).__name__}: {str(e)[:100]}. Try `ironman login`.")
 
 
+def cmd_check(file=None):
+    from .swimsets import breakdown
+    from .workouts import structure
+    cfg = S.load_config()
+    path = Path(file) if file else (S.ROOT / cfg["plan"])
+    if not path.exists():
+        console.print(f"[red]No file at {path}[/]")
+        return 1
+    race = (cfg.get("race") or {}).get("date")
+    race_d = date.fromisoformat(race) if race else date.today() + timedelta(weeks=20)
+    try:
+        plan = P.load_plan(path, race_d, "check")
+    except P.PlanError as ex:
+        console.print(f"[red]✗ {ex}[/]")
+        return 1
+    console.print(f"[green]✓[/] {path.name}: {len(plan)} sessions over {P.num_weeks()} weeks. "
+                  f"Week 1 starts {P.plan_start():%a %b %d}, race {P.race_day():%a %b %d}"
+                  + ("" if race else " (no race date set yet, so this is a sample date)") + ".")
+    hours = [sum(s.minutes for s in plan if s.week == w) / 60 for w in range(1, P.num_weeks() + 1)]
+    console.print(f"  Weekly hours: {min(hours):.1f} to {max(hours):.1f} (peak in week {hours.index(max(hours)) + 1})")
+    sports = sorted({s.sport for s in plan})
+    console.print("  Sports: " + ", ".join(f"{sp} ({sum(1 for s in plan if s.sport == sp)})" for sp in sports))
+    warns = []
+    for s in plan:
+        where = f"week {s.week} {s.day:%a}"
+        if s.sport == "swim":
+            tot = breakdown(s.detail, s.amount)[1]
+            if tot != s.amount:
+                warns.append(f"{where} swim: sets add up to {tot} yd but amount says {s.amount}")
+        if s.sport in ("bike", "run") and s.kind in ("intervals", "test") and structure(s.detail, s.amount) is None:
+            warns.append(f"{where} {s.sport}: couldn't read the intervals in \"{s.detail[:50]}\" "
+                         "(still fine to follow, just can't be sent as a structured workout)")
+        if s.amount == 0 and s.sport != "race":
+            warns.append(f"{where} {s.sport}: amount is 0")
+    for w in warns[:30]:
+        console.print(f"  [yellow]![/] {w}")
+    if not warns:
+        console.print("  [green]No problems found.[/]")
+    return 0
+
+
 def cmd_setup():
     import shutil as _sh
     cfg_path = S.CONFIG
@@ -344,6 +385,8 @@ def main(argv=None):
     t.add_argument("day", nargs="?", default="today", help="or: tomorrow, sat, 2026-12-05")
     dm = sub.add_parser("demo", help="try it with made-up data (no watch needed): ironman demo [web|today|runs]")
     dm.add_argument("what", nargs="?", default="")
+    ck = sub.add_parser("check", help="check a plan CSV for mistakes: ironman check [plans/my-plan.csv]")
+    ck.add_argument("file", nargs="?")
     sub.add_parser("history", help="every change you've applied, and why")
     sub.add_parser("runs", help="your recent runs: zones, drift, pace, and your easy-pace trend")
     sd = sub.add_parser("send", help="send the day's swim/run to your watch and ride to Zwift: ironman send today")
@@ -377,6 +420,8 @@ def main(argv=None):
             extra = ["web", "--port", "8643"]
         console.print(f"[dim]Demo data in {home}. Your real data isn't touched.[/]")
         return sp.run([sys.executable, "-m", "ironman_coach.cli", "--offline", *extra], env=env).returncode
+    if a.cmd == "check":
+        return cmd_check(a.file)
     if a.cmd == "setup":
         return cmd_setup()
     if a.cmd == "web":

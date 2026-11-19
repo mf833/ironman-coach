@@ -29,71 +29,266 @@ the plan file. No AI required, no accounts, nothing in the cloud.
 - **Any watch**: Garmin directly, or Coros, Polar, Suunto, Wahoo, Apple Watch and
   others through [intervals.icu](https://intervals.icu) (free).
 
-## Try it first (no watch needed)
+## Quick start
+
+Already comfortable in a terminal? This is everything:
+
+```bash
+git clone https://github.com/mf833/ironman-coach.git
+cd ironman-coach
+./install.sh          # then open a NEW terminal tab
+ironman demo web      # look around with made-up data
+ironman setup         # your race, date, plan, watch, miles or km
+ironman login         # connect your watch, once
+ironman web           # your dashboard at http://localhost:8642
+```
+
+New to the terminal? Follow the steps below.
+
+## Step-by-step setup
+
+### 1. Open Terminal
+
+- **Mac**: press <kbd>Cmd</kbd> + <kbd>Space</kbd>, type `Terminal`, press Enter.
+- **Linux**: open your terminal app.
+
+Every gray box below is something you copy, paste into Terminal, and press Enter.
+
+### 2. Download the app
+
+```bash
+cd ~
+git clone https://github.com/mf833/ironman-coach.git
+cd ironman-coach
+```
+
+If your Mac says `git` isn't installed, it offers to install the developer tools.
+Click **Install**, wait, then run the lines again.
+
+### 3. Install
 
 ```bash
 ./install.sh
-ironman demo          # or: ironman demo web
 ```
 
-The demo is a made-up runner 6 weeks into the marathon plan, with improving easy pace,
-a missed run, easy runs that drifted too hard, steady long runs and a bad night's sleep,
-so you can see every part of the dashboard and the rules firing. It lives in
-`~/.ironman-demo` and never touches your real data.
+It finds Python 3.12 or newer, or installs it (with uv, Homebrew or conda, whichever
+you have), and adds an `ironman` command. It takes a minute or two.
 
-## Setup
+**Then open a new Terminal tab** (<kbd>Cmd</kbd> + <kbd>T</kbd>). The `ironman` command
+only exists in new tabs. If you already have something called `ironman`, install it
+under another name: `IRONMAN_ALIAS=coach ./install.sh`, then use `coach` everywhere
+below.
 
-You need a Mac or Linux computer with Python 3.12+ (the installer finds or
-installs it).
+### 4. Try the demo (optional, 1 minute)
 
 ```bash
-git clone https://github.com/YOUR-NAME/ironman-coach.git
-cd ironman-coach
-./install.sh          # then open a new terminal tab
-ironman setup         # race, date, plan, your watch, miles or km
-ironman login         # Garmin: email + password (+ 2FA), once
-                      # other watches: your intervals.icu athlete ID + API key
-ironman               # or: ironman web
+ironman demo web
 ```
 
-**Not on Garmin?** Make a free [intervals.icu](https://intervals.icu) account, connect
-your watch there (Settings > Connections), then copy your athlete ID and API key from
-Settings > Developer Settings. Pick "something else" in `ironman setup`. Everything
-works except sending workouts to the watch, which is Garmin-only for now.
+Your browser opens a dashboard for a made-up runner 6 weeks into a marathon plan,
+with improving easy pace, a missed run, easy runs that went too hard and a bad
+night's sleep, so you can see every feature. Press <kbd>Ctrl</kbd> + <kbd>C</kbd> in
+Terminal to stop it. The demo lives in `~/.ironman-demo` and never touches your
+real data.
 
-Your logins stay on your computer (`~/.garminconnect`, `config.json`), and all
-your data lives in `data/`. Git ignores all of them.
+### 5. Set up your race and plan
 
-## Plans
+```bash
+ironman setup
+```
 
-Plans are CSV files in `plans/`, one row per session. Open them in Excel, Numbers
-or Google Sheets.
+It asks a few questions:
+
+| Question | Example | Notes |
+|---|---|---|
+| Race name | `Lakeside 70.3` | shows at the top of the dashboard |
+| Race date | `2027-06-05` | always YYYY-MM-DD |
+| Plan | `2` | pick an included plan, or choose "my own CSV" (see [Your plan file](#your-plan-file)) |
+| Your watch | `1` | 1 = Garmin, 2 = anything else (through intervals.icu) |
+| Miles or km | `mi` | for paces and distances |
+| Bike FTP | `220` | optional; press Enter to skip |
+
+An included plan is copied to `plans/my-plan.csv`, so you can edit it freely.
+Run `ironman setup` again anytime to change any of this.
+
+### 6. Connect your watch
+
+#### Garmin
+
+```bash
+ironman login
+```
+
+Type your Garmin Connect email and password. If you use two-step verification,
+Garmin emails or texts you a code; type it when asked. That's it: the login is saved
+on your computer (`~/.garminconnect`) and refreshes itself. You only do this again
+if sync ever says it failed.
+
+#### Coros, Polar, Suunto, Wahoo, Apple Watch and others
+
+These connect through [intervals.icu](https://intervals.icu), a free training site
+that already syncs with most watch brands.
+
+1. Make a free account at [intervals.icu](https://intervals.icu).
+2. In intervals.icu, go to **Settings > Connections** and connect your watch's app
+   (Coros, Polar, Suunto, Wahoo, etc.). For Apple Watch, use an app like HealthFit
+   to send workouts to intervals.icu.
+3. Wait until your recent workouts show up in intervals.icu.
+4. Go to **Settings > Developer Settings**. Copy your **athlete ID** (it looks like
+   `i12345`) and click to create an **API key**.
+5. Make sure `ironman setup` has your watch set to 2, then run:
+
+```bash
+ironman login
+```
+
+and paste the athlete ID and API key when asked. They're saved in `config.json`,
+which stays on your computer and is never uploaded.
+
+Everything works the same except `ironman send` (workouts to the watch), which is
+Garmin-only for now.
+
+### 7. Use it
+
+```bash
+ironman            # dashboard in Terminal
+ironman today      # exactly what to do today
+ironman web        # dashboard in your browser
+```
+
+To keep the browser dashboard running all the time (Mac), so you can just open
+http://localhost:8642 whenever:
+
+```bash
+ironman web --always      # starts when you log in, restarts if it stops
+ironman web --stop        # turn that off
+```
+
+It syncs your watch data on its own (whenever the last sync is over 3 hours old).
+It never sends a workout to your watch unless you press Send or run `ironman send`.
+
+### Updating to the newest version
+
+```bash
+cd ~/ironman-coach
+git pull
+./install.sh
+```
+
+Your plan, settings and data are never touched by updates.
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `command not found: ironman` | open a new Terminal tab, or run `source ~/.zshrc` |
+| "Sync failed" on the dashboard | run `ironman login` again |
+| "Problem in your plan file" | run `ironman check` to see which line |
+| Browser says it can't connect | `ironman web` isn't running; start it, or use `ironman web --always` |
+| Mac asks if Terminal can access Documents | say yes; that's how rides get into your Zwift folder |
+| Ride didn't show up in Zwift | restart Zwift; look under Workouts > Custom Workouts |
+| Something else | run the tests: `.venv/bin/pytest -q`, and open an issue with what you see |
+
+## Your plan file
+
+A plan is a spreadsheet saved as CSV: one row per workout. Make it in Excel,
+Google Sheets or Numbers, or start from `plans/template.csv`.
+
+### The columns
+
+| Column | Required? | What to put | Examples |
+|---|---|---|---|
+| `week` | yes | week number, 1 to N. The **last week is race week**. | `1`, `12` |
+| `day` | yes | day of the week | `Mon`, `Tue`, ... `Sun` |
+| `sport` | yes | one of: `swim`, `bike`, `run`, `strength`, `race` | `run` |
+| `amount` | yes | **minutes**, or **yards** for swims. `0` for the race. | `45`, `90`, `2500` |
+| `kind` | no | `easy`, `long`, `intervals`, `test`, `straight`, `brick`, `recovery`, `race` | `long` |
+| `phase` | no | a label for the week, shown on the dashboard | `Base`, `Build`, `Taper` |
+| `title` | no | a custom name; otherwise one is made from sport and kind | `Hill repeats` |
+| `detail` | no, but recommended | the workout itself, in plain words (see below) | `At 15 min: 3x8 min Z3, 4 min easy between` |
+
+Rules of thumb:
+
+- Two workouts on one day = two rows with the same week and day (e.g. a swim and a run,
+  or a ride and a brick run).
+- Leave rest days out. Any day with no rows is a rest day.
+- You don't need dates. Your race date (from `ironman setup`) places week N on race
+  week and counts backward, so one plan works for any race.
+- Put the race itself in the last week with `sport` = `race`. If you forget, it's
+  added automatically on your race date.
+- `long`, `test` and `straight` sessions count as key sessions: they're protected
+  when things get moved around.
+
+### Writing the detail so the app understands it
+
+You can write anything, but these patterns unlock the extras (watts and heart rate,
+swim tables, sending to your watch):
+
+| Workout | Write it like this |
+|---|---|
+| Zones | `Z2`, `Z3-Z4`, `Z1 building to Z2` |
+| Intervals | `At 15 min: 4x5 min Z4, 3 min easy between` |
+| A single block | `At 20 min: 20 min Z3` |
+| Hill repeats | `Z1-Z2; 6x2 min hill repeats once warm` |
+| Run/walk | `Run/walk: 9 min Z2 running / 1 min walking` |
+| Tests | `WU 20 min easy; 20 min FTP TEST; 10 min easy` |
+| Swim | `WU 200 easy + 4x50 drills; main 8x100 on 20s rest; CD 200 easy` |
+| Swim ladder | `main Ladder 25-50-75-100-75-50-25 on 20s` |
+| Straight swim | `WU 200 easy; 2000 straight at easy, steady effort; CD 200 easy` |
+
+For swims, split the workout into `WU`, `main` and `CD` with semicolons, and join sets
+with `+` or `, then`. Make the sets add up to the `amount` (the checker tells you if
+they don't). `4x50 drills` gets two drills picked for you automatically.
+
+### A tiny example plan
 
 | week | day | sport | amount | kind | phase | title | detail |
 |---|---|---|---|---|---|---|---|
-| 1 | Tue | swim | 1500 | intervals | Base | | WU 200 easy + 4x50 drills; main 9x100 on 20s rest; CD 200 easy |
-| 1 | Wed | bike | 60 | intervals | Base | | At 15 min: 3x8 min Z3, 4 min easy between |
-| 1 | Sun | run | 45 | long | Base | | Easy Z2 |
+| 1 | Tue | run | 40 | easy | Base | | Easy, Z1-Z2 |
+| 1 | Wed | swim | 1500 | intervals | Base | | WU 200 easy + 4x50 drills; main 9x100 on 20s rest; CD 200 easy |
+| 1 | Thu | bike | 60 | intervals | Base | | At 15 min: 3x8 min Z3, 4 min easy between |
+| 1 | Sat | bike | 120 | long | Base | | 15 min Z1, then steady Z2 |
+| 1 | Sat | run | 15 | brick | Base | | Straight off the bike, easy Z2 |
+| 1 | Sun | run | 60 | long | Base | | Easy Z2 |
+| 2 | Sat | race | 0 | race | Race | | Race day |
 
-- **week**: 1 to N. The last week is race week. Your race date sets the calendar,
-  so the same plan works for any race.
-- **day**: Mon to Sun. **sport**: swim, bike, run, strength or race.
-- **amount**: minutes, or yards for swims.
-- **kind** (optional): easy, long, intervals, test, straight, brick, recovery.
-  Long sessions, tests and straight swims are treated as key sessions.
-- **detail**: the workout. Write zones like `Z2` or `Z3-Z4` and they turn into
-  watts and heart rate. Write swims as `WU ...; main ...; CD ...` with sets like
-  `6x100 on 20s rest` and they become set-by-set tables and Garmin workouts.
+As a raw CSV file, the first lines look like this:
 
-Included, original and free to use:
+```csv
+week,day,sport,amount,kind,phase,title,detail
+1,Tue,run,40,easy,Base,,"Easy, Z1-Z2"
+1,Wed,swim,1500,intervals,Base,,WU 200 easy + 4x50 drills; main 9x100 on 20s rest; CD 200 easy
+```
+
+(Spreadsheet apps add the quotes around details with commas for you.)
+
+### Saving it from a spreadsheet
+
+- **Google Sheets**: File > Download > Comma-separated values (.csv)
+- **Excel**: File > Save As > CSV UTF-8 (Comma delimited)
+- **Numbers**: File > Export To > CSV
+
+Save it as `plans/my-plan.csv` inside the `ironman-coach` folder (or anywhere, and
+give that path in `ironman setup`). Then check it:
+
+```bash
+ironman check
+```
+
+It reports the number of weeks and sessions, weekly hours, and anything it can't
+read, with the exact week and day.
+
+### Included plans
+
+All original and free to use:
 
 - `full-distance-triathlon-20wk.csv`: peaks around 15 h/week, 6-hour ride, 2:30 run
 - `half-distance-triathlon-16wk.csv`: peaks around 10 h/week
 - `marathon-16wk.csv`: run-only, 4-6 runs a week
 - `template.csv`: start your own
 
-Copying a plan from a book or website into a CSV for yourself is fine. Please
-don't commit someone else's plan to a public repo.
+Copying a plan from a book or website into a CSV for yourself is fine. Please don't
+commit someone else's plan to a public repo.
 
 ## Daily commands
 
@@ -113,6 +308,8 @@ don't commit someone else's plan to a public repo.
 | `ironman set ftp 230` / `ironman set swim 1000 18:30` | Update your numbers after a test |
 | `ironman --date 2027-03-20` | Preview any day |
 | `ironman demo` | Try everything with made-up data |
+| `ironman check` | Check your plan file for mistakes |
+| `ironman setup` / `ironman login` | Change your race or plan / reconnect your watch |
 
 ## How it works: all the math
 
