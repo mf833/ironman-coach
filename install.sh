@@ -31,7 +31,7 @@ else
 fi
 
 .venv/bin/python -m pip install -q --upgrade pip
-.venv/bin/python -m pip install -q -e ".[dev]"
+.venv/bin/python -m pip install -q -e ".[dev]" 2>&1 | grep -v -i "warning\|editable\|careful\|wheel\|\*\*\*\|^ *!!" || true
 
 NAME="${IRONMAN_ALIAS:-ironman}"
 if grep -q "alias $NAME=" ~/.zshrc 2>/dev/null; then
@@ -41,4 +41,4 @@ else
   echo "alias $NAME=\"$DIR/.venv/bin/ironman\"" >> ~/.zshrc
 fi
 echo ""
-echo "Installed. Open a new terminal tab, then run: ironman setup"
+echo "Installed. Open a new terminal tab (or run: source ~/.zshrc), then: $NAME demo"
