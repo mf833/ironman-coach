@@ -50,7 +50,7 @@ def render(console: Console, ctx: dict) -> None:
         lbl = week_label(wk)
         head.append(f"   ·   week {wk} of {num_weeks()}" + (f" ({lbl})" if lbl else ""), style="dim")
     synced = ctx.get("synced_at")
-    head.append(f"\n{today:%A, %B %d}" + (f"   ·   Garmin synced {synced}" if synced else "   ·   Garmin not synced"),
+    head.append(f"\n{today:%A, %B %d}" + (f"   ·   Synced {synced}" if synced else "   ·   Not synced yet"),
                 style="dim")
     if ctx.get("sync_error"):
         head.append(f"\nSync failed: {ctx['sync_error']}  (run `ironman login`)", style="yellow")
@@ -92,7 +92,7 @@ def render(console: Console, ctx: dict) -> None:
             body = Text.from_markup(f"{SEV[a.severity]} [bold]{a.title}[/]")
             body.append(f"\n{a.why}", style="")
             if a.instead:
-                body.append(f"\nIf you change it: {a.instead}", style=ACCENT)
+                body.append(f"\n{'If you change it' if a.changes else 'Tip'}: {a.instead}", style=ACCENT)
             if a.changes:
                 body.append(f"\nironman apply {i}   ·   ironman dismiss {i}", style="dim")
             a_tbl.add_row(f"[bold]{i}[/]", body)

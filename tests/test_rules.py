@@ -334,3 +334,36 @@ def test_fatigue_rule_eases_next_two_days():
     assert adv and adv[0].severity == "suggest" and adv[0].changes
     assert not engine.rule_fatigue(plan, statuses, date(2027, 2, 2),
                                    {"ratio": 1.7, "atl": 17, "ctl": 10, "history_days": 10}, CFG)  # too little history
+
+
+def test_demo_runs_end_to_end(tmp_path, monkeypatch):
+    from ironman_coach import demo, insights as I
+    from ironman_coach.load import fatigue_series
+    monkeypatch.setattr(demo, "HOME", tmp_path / "demo")
+    import json
+    today = date(2026, 11, 19)
+    home = demo.build(today)
+    cfg = json.loads((home / "config.json").read_text())
+    cache = json.loads((home / "data" / "garmin_cache.json").read_text())
+    plan = P.load_plan(home / cfg["plan"], date.fromisoformat(cfg["race"]["date"]), "Demo")
+    statuses, _ = engine.match(plan, cache["activities"], today, CFG)
+    runs = I.recent_insights(cache["activities"], cache["details"], statuses, today)
+    f = fatigue_series(cache["activities"], cache["details"], cache["hr_zones"], today)
+    signals = engine.recovery_signals(cache["days"][today.isoformat()], None, CFG)
+    adv = engine.advise(plan, statuses, signals, today, state(), CFG, cache["activities"], runs, f)
+    rules = {a.rule for a in adv}
+    assert {"recovery", "missed", "insight"} <= rules
+    assert I.easy_efficiency(runs, today)["change_pct"] > 0
+
+
+def test_no_go_longer_while_easing_off():
+    plan = full_plan()
+    today = date(2027, 1, 14)
+    statuses, _ = engine.match(plan, [], today, CFG)
+    longs = [{"session_kind": "long", "decoupling": 2.0, "minutes": 70, "date": "2027-01-10"},
+             {"session_kind": "long", "decoupling": 3.0, "minutes": 65, "date": "2027-01-03"}]
+    calm = engine.advise(plan, statuses, [], today, state(), CFG, [], longs, None)
+    assert any(a.rule == "insight" and a.changes for a in calm)
+    hot = engine.advise(plan, statuses, [], today, state(), CFG, [], longs,
+                        {"ratio": 1.7, "atl": 170, "ctl": 100, "history_days": 60})
+    assert not any(a.rule == "insight" and a.changes for a in hot)

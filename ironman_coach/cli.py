@@ -342,6 +342,8 @@ def main(argv=None):
     sub.add_parser("explain", help="plain-English explanation from Claude (optional)")
     t = sub.add_parser("today", help="exactly what to do today: zones, watts, heart rate, how")
     t.add_argument("day", nargs="?", default="today", help="or: tomorrow, sat, 2026-12-05")
+    dm = sub.add_parser("demo", help="try it with made-up data (no watch needed): ironman demo [web|today|runs]")
+    dm.add_argument("what", nargs="?", default="")
     sub.add_parser("history", help="every change you've applied, and why")
     sub.add_parser("runs", help="your recent runs: zones, drift, pace, and your easy-pace trend")
     sd = sub.add_parser("send", help="send the day's swim/run to your watch and ride to Zwift: ironman send today")
@@ -364,6 +366,17 @@ def main(argv=None):
     today = date.fromisoformat(a.date) if a.date else date.today()
     sync = not a.offline and not a.date
 
+    if a.cmd == "demo":
+        import os
+        import subprocess as sp
+        from . import demo
+        home = demo.build()
+        env = dict(os.environ, IRONMAN_HOME=str(home))
+        extra = [a.what] if a.what else []
+        if a.what == "web":
+            extra = ["web", "--port", "8643"]
+        console.print(f"[dim]Demo data in {home}. Your real data isn't touched.[/]")
+        return sp.run([sys.executable, "-m", "ironman_coach.cli", "--offline", *extra], env=env).returncode
     if a.cmd == "setup":
         return cmd_setup()
     if a.cmd == "web":

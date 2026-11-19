@@ -29,6 +29,18 @@ the plan file. No AI required, no accounts, nothing in the cloud.
 - **Any watch**: Garmin directly, or Coros, Polar, Suunto, Wahoo, Apple Watch and
   others through [intervals.icu](https://intervals.icu) (free).
 
+## Try it first (no watch needed)
+
+```bash
+./install.sh
+ironman demo          # or: ironman demo web
+```
+
+The demo is a made-up runner 6 weeks into the marathon plan, with improving easy pace,
+a missed run, easy runs that drifted too hard, steady long runs and a bad night's sleep,
+so you can see every part of the dashboard and the rules firing. It lives in
+`~/.ironman-demo` and never touches your real data.
+
 ## Setup
 
 You need a Mac or Linux computer with Python 3.12+ (the installer finds or
@@ -100,6 +112,7 @@ don't commit someone else's plan to a public repo.
 | `ironman history` | Every change you applied, and why |
 | `ironman set ftp 230` / `ironman set swim 1000 18:30` | Update your numbers after a test |
 | `ironman --date 2027-03-20` | Preview any day |
+| `ironman demo` | Try everything with made-up data |
 
 ## How it works: all the math
 

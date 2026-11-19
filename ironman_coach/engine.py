@@ -165,7 +165,10 @@ def advise(plan, statuses, signals, today, state, cfg, activities=(), insights=(
     out += rule_busy(plan, statuses, today, state.get("busy", {}))
     out += rule_run_insights(plan, statuses, today, list(insights))
     if fatigue:
-        out += rule_fatigue(plan, statuses, today, fatigue, cfg)
+        tired = rule_fatigue(plan, statuses, today, fatigue, cfg)
+        if any(a.severity == "suggest" for a in tired):  # don't suggest going longer while easing off
+            out = [a for a in out if a.rule != "insight" or not a.changes]
+        out += tired
     dismissed = set(state.get("dismissed", []))
     return [a for a in out if a.id not in dismissed]
 

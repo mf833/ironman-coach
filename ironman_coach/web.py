@@ -132,7 +132,7 @@ def dashboard_html(ctx: dict, week_override: int | None = None) -> str:
 
     head = f"""<header><div><h1>{e(P.race_name())}</h1>
 <div class="sub">{when} · {where}</div></div>
-<div class="right"><div class="muted small">Garmin synced {e(sync)}</div>
+<div class="right"><div class="muted small">Synced {e(sync)}</div>
 <button onclick="act('/api/sync')">Sync now</button></div></header>{err}"""
 
     todays = [s for s in plan if s.day == today]
@@ -154,7 +154,7 @@ def dashboard_html(ctx: dict, week_override: int | None = None) -> str:
             btns = (f'<div class="actions"><button onclick="act(\'/api/apply/{i}\')">Apply</button>'
                     f'<button class="ghost" onclick="act(\'/api/dismiss/{i}\')">Dismiss</button></div>') if a.changes else ""
             adv += (f'<div class="adv {a.severity}"><div class="t">{e(a.title)}</div><div>{e(a.why)}</div>'
-                    + (f'<div class="instead">If you change it: {e(a.instead)}</div>' if a.instead else "")
+                    + (f'<div class="instead">{"If you change it" if a.changes else "Tip"}: {e(a.instead)}</div>' if a.instead else "")
                     + btns + "</div>")
     else:
         adv = '<div class="okmsg">Nothing to change. Train as planned.</div>'
