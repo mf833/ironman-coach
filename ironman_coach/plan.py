@@ -156,6 +156,7 @@ def apply_overrides(plan: list[Session], overrides: dict) -> list[Session]:
         changes = {k: v for k, v in o.items() if k in ("sport", "amount", "title", "detail", "kind", "note")}
         if "day" in o:
             changes["day"] = date.fromisoformat(o["day"])
+            changes["week"] = week_of(changes["day"])
         out.append(replace(s, **changes))
     return sorted(out, key=lambda s: (s.day, s.id))
 

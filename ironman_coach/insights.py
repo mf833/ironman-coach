@@ -119,7 +119,8 @@ def run_insight(a: dict, detail: dict | None, session=None, units: str = "mi") -
             else:
                 out["verdict"].append(f"Planned Z{min(planned)}-Z{top}: {inside}% in target. Nicely controlled.")
     d = out["decoupling"]
-    if d is not None and a["minutes"] >= 45:
+    steady = session is None or session.kind not in ("intervals", "test")
+    if d is not None and a["minutes"] >= 45 and steady:
         if d < 0:
             out["verdict"].append(f"Heart-rate drift {d}%: negative, so you got faster at the same effort. Great pacing.")
         elif d < 5:

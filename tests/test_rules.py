@@ -367,3 +367,35 @@ def test_no_go_longer_while_easing_off():
     hot = engine.advise(plan, statuses, [], today, state(), CFG, [], longs,
                         {"ratio": 1.7, "atl": 170, "ctl": 100, "history_days": 60})
     assert not any(a.rule == "insight" and a.changes for a in hot)
+
+
+# ---- regressions from bug hunt --------------------------------------------------------
+def test_moved_session_counts_in_its_new_week():
+    plan = full_plan()
+    sun = next(s for s in plan if s.week == 2 and s.sport == "run" and s.kind == "long")
+    moved = P.apply_overrides(plan, {sun.id: {"day": (sun.day + timedelta(days=1)).isoformat()}})
+    s2 = next(s for s in moved if s.id == sun.id)
+    assert s2.week == 3 == P.week_of(s2.day)
+
+
+def test_hrv_without_baseline_is_not_called_normal():
+    sig = engine.recovery_signals({"hrv": {"last_night": 40, "status": None}}, None, CFG)
+    hrv = next(g for g in sig if g.name == "HRV")
+    assert hrv.level is None and "baseline" in hrv.why
+
+
+def test_no_drift_verdict_on_interval_runs():
+    from ironman_coach.insights import run_insight
+    s = next(x for x in full_plan() if x.sport == "run" and x.kind == "intervals")
+    laps = [{"m": 1609, "s": 600, "hr": 150}] * 3 + [{"m": 1609, "s": 600, "hr": 175}] * 3
+    r = run_insight({"id": 1, "name": "x", "date": s.day.isoformat(), "minutes": 60, "meters": 9600, "avg_hr": 160},
+                    {"zone_secs": None, "laps": laps}, s)
+    assert not any("drift" in v for v in r["verdict"])
+
+
+def test_set_swim_accepts_hours(tmp_path, monkeypatch):
+    from ironman_coach import cli, state as S
+    monkeypatch.setattr(S, "CONFIG", tmp_path / "config.json")
+    cli.cmd_set("swim", ["1000", "1:05:00"])
+    import json
+    assert json.loads((tmp_path / "config.json").read_text())["swim_t_pace_sec"] == 390.0

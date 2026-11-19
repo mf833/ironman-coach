@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import subprocess
@@ -85,8 +86,9 @@ def build(today: date, sync=True, force=False, quiet=False) -> dict:
     from .load import fatigue_series
     fatigue = fatigue_series(cache["activities"], cache.get("details") or {}, cache.get("hr_zones") or {}, today)
     advice = engine.advise(plan, statuses, signals, today, st, cfg, cache["activities"], runs, fatigue)
-    st["last_advice"] = [{"id": a.id, "title": a.title, "why": a.why, "changes": a.changes} for a in advice]
-    S.save_state(st)
+    if today == date.today():  # previews (--date) must not renumber today's suggestions
+        st["last_advice"] = [{"id": a.id, "title": a.title, "why": a.why, "changes": a.changes} for a in advice]
+        S.save_state(st)
     return {"today": today, "plan": plan, "statuses": statuses, "extras": extras, "signals": signals,
             "advice": advice, "activities": cache["activities"], "synced_at": cache.get("synced_at", "")[:16].replace("T", " "),
             "sync_error": err, "cache": cache, "runs": runs, "fatigue": fatigue, "efficiency": I.easy_efficiency(runs, today), "bests": _bests(st, cache["activities"])}
@@ -198,11 +200,15 @@ def cmd_send(ctx, day: date, say=None):
             body = W.swim_workout(s, names)
         try:
             api = api or garmin.connect()
-            wid = sent.get(s.id)
-            if not wid:
+            fingerprint = hashlib.sha1(json.dumps(body, sort_keys=True).encode()).hexdigest()[:12]
+            prev = sent.get(s.id)
+            prev_id, prev_fp = (prev.get("id"), prev.get("fp")) if isinstance(prev, dict) else (prev, None)
+            if prev_id and prev_fp == fingerprint:  # same workout already in Garmin: just send it again
+                wid = prev_id
+            else:  # new, or the session changed since it was last sent
                 res = api.upload_workout(body)
                 wid = res.get("workoutId")
-                sent[s.id] = wid
+                sent[s.id] = {"id": wid, "fp": fingerprint}
                 S.save_state(st)
             ok = push_to_watch(api, wid, body["workoutName"])
             if ok:
@@ -330,8 +336,10 @@ def cmd_set(what, values):
         console.print(f"FTP set to {cfg['ftp']} W. Bike zones now use it.")
     else:
         yards, t = int(values[0]), values[1]
-        m, sec = t.split(":")
-        per100 = (int(m) * 60 + int(sec)) / yards * 100
+        secs = 0
+        for part in t.split(":"):
+            secs = secs * 60 + int(part)
+        per100 = secs / yards * 100
         cfg["swim_t_pace_sec"] = round(per100, 1)
         console.print(f"Swim pace set: {int(per100 // 60)}:{int(per100 % 60):02d} per 100 yd. Swim zones now use it.")
     cfg_path.write_text(json.dumps(cfg, indent=2))

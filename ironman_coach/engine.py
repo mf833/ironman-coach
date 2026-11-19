@@ -99,7 +99,9 @@ def recovery_signals(day: dict | None, note: str | None, cfg: dict) -> list[Sign
         ln, lo, hi, low_up = hrv["last_night"], hrv.get("balanced_low"), hrv.get("balanced_upper"), hrv.get("low_upper")
         status = (hrv.get("status") or "").upper()
         rng = f" (your normal {lo}-{hi})" if lo and hi else ""
-        if status in ("LOW", "POOR") or (low_up and ln < low_up):
+        if not (lo and hi) and status not in ("LOW", "POOR", "UNBALANCED", "BALANCED"):
+            lvl, why = None, "building your baseline (needs a week of nights)"
+        elif status in ("LOW", "POOR") or (low_up and ln < low_up):
             lvl, why = 2, "well below your normal range"
         elif status == "UNBALANCED" or (lo and ln < lo):
             lvl, why = 1, "a bit outside your normal range"

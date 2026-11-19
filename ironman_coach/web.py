@@ -151,8 +151,9 @@ def dashboard_html(ctx: dict, week_override: int | None = None) -> str:
     if advice:
         adv = ""
         for i, a in enumerate(advice, 1):
-            btns = (f'<div class="actions"><button onclick="act(\'/api/apply/{i}\')">Apply</button>'
-                    f'<button class="ghost" onclick="act(\'/api/dismiss/{i}\')">Dismiss</button></div>') if a.changes else ""
+            aid = e(a.id, quote=True).replace("'", "")
+            btns = (f'<div class="actions"><button onclick="act(\'/api/apply\',{{id:\'{aid}\'}})">Apply</button>'
+                    f'<button class="ghost" onclick="act(\'/api/dismiss\',{{id:\'{aid}\'}})">Dismiss</button></div>') if a.changes else ""
             adv += (f'<div class="adv {a.severity}"><div class="t">{e(a.title)}</div><div>{e(a.why)}</div>'
                     + (f'<div class="instead">{"If you change it" if a.changes else "Tip"}: {e(a.instead)}</div>' if a.instead else "")
                     + btns + "</div>")
@@ -330,9 +331,13 @@ class Handler(BaseHTTPRequestHandler):
                 if path == "/api/sync":
                     _, err = cli.maybe_sync(S.load_config(), force=True, quiet=True)
                     say(f"Sync failed: {err}" if err else "Synced with Garmin.")
-                elif path.startswith("/api/apply/") or path.startswith("/api/dismiss/"):
-                    cli.build(today, sync=False)  # refresh numbering
-                    cli.cmd_apply(int(path.rsplit("/", 1)[1]), dismiss="dismiss" in path, say=say)
+                elif path in ("/api/apply", "/api/dismiss"):
+                    cli.build(today, sync=False)  # refresh the list, then find this exact suggestion
+                    ids = [x["id"] for x in S.load_state().get("last_advice", [])]
+                    if data.get("id") in ids:
+                        cli.cmd_apply(ids.index(data["id"]) + 1, dismiss=path.endswith("dismiss"), say=say)
+                    else:
+                        say("That suggestion changed since the page loaded. Reload and try again.")
                 elif path == "/api/undo":
                     cli.cmd_undo(say=say)
                 elif path.startswith("/api/send/"):
